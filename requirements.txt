@@ -1,0 +1,6 @@
+streamlit>=1.30
+pandas>=2.0
+matplotlib>=3.7
+pytest>=7.0
+# optional, only for tools/crosscheck_pm4py.py
+# pm4py>=2.7
