@@ -1,0 +1,15 @@
+Model,Places,Transitions,Arcs,States,Deadlocks,Improper ends,Sound,Structural issues,Time (ms),Auto fix,Sound after fix,States after fix
+M1_sequential,7,6,12,7,0,0,yes,-,0.2,-,-,
+M2_parallel,11,9,20,11,0,0,yes,-,0.1,-,-,
+M3_wrong_join,12,11,23,8,2,0,no,P1,0.1,Gateway 'AND-join': parallelGateway → exclusiveGateway,yes,12.0
+M3_fixed,12,12,24,12,0,0,yes,-,0.1,-,-,
+M4_missing_recovery,14,12,26,17,1,0,no,P4,0.2,manual (see fixed model),-,
+M4_fixed,24,25,52,32,0,0,yes,-,0.4,-,-,
+M5_resource_deadlock,17,13,36,20,1,0,no,P6,0.2,monitor V1,yes,19.0
+M5_fixed,17,13,36,19,0,0,yes,-,0.2,-,-,
+M6_full_timed,30,31,68,82,0,0,yes,-,1.4,-,-,
+D1_order_fulfilment,13,12,26,13,0,0,yes,-,0.1,-,-,
+D2_insurance_claim,10,9,19,7,2,0,no,P1,0.1,Gateway 'AND-join': parallelGateway → exclusiveGateway,yes,10.0
+D3_leave_request,10,9,19,25,0,1,no,P3,0.3,Gateway 'XOR-merge': exclusiveGateway → parallelGateway,yes,10.0
+D4_hospital_admission,16,12,34,19,1,0,no,P6,0.3,monitor V1,yes,18.0
+D5_purchase_order_loop,10,9,19,3,1,0,no,P2,0.1,Gateway 'AND-join': parallelGateway → exclusiveGateway,yes,10.0
