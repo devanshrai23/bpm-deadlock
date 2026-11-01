@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Defs_D5_purchase_order_loop" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.0.0">
+  <bpmn:process id="Process_D5_purchase_order_loop" name="D5 Purchase order revision loop (AND-join at loop entry)" isExecutable="false">
+    <bpmn:startEvent id="start" name="Need identified">
+      <bpmn:outgoing>f1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:task id="create" name="Create purchase order">
+      <bpmn:documentation>time: 15</bpmn:documentation>
+      <bpmn:incoming>f1</bpmn:incoming>
+      <bpmn:outgoing>f2</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:parallelGateway id="merge" name="">
+      <bpmn:incoming>f2</bpmn:incoming>
+      <bpmn:incoming>f8</bpmn:incoming>
+      <bpmn:outgoing>f3</bpmn:outgoing>
+    </bpmn:parallelGateway>
+    <bpmn:task id="review" name="Review purchase order">
+      <bpmn:documentation>time: 20</bpmn:documentation>
+      <bpmn:incoming>f3</bpmn:incoming>
+      <bpmn:outgoing>f4</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="ok" name="Approved?">
+      <bpmn:incoming>f4</bpmn:incoming>
+      <bpmn:outgoing>f5</bpmn:outgoing>
+      <bpmn:outgoing>f7</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="send" name="Send PO to supplier">
+      <bpmn:documentation>time: 5</bpmn:documentation>
+      <bpmn:incoming>f5</bpmn:incoming>
+      <bpmn:outgoing>f6</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="end" name="PO sent">
+      <bpmn:incoming>f6</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:task id="revise" name="Revise purchase order">
+      <bpmn:documentation>time: 15</bpmn:documentation>
+      <bpmn:incoming>f7</bpmn:incoming>
+      <bpmn:outgoing>f8</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="f1" sourceRef="start" targetRef="create" />
+    <bpmn:sequenceFlow id="f2" sourceRef="create" targetRef="merge" />
+    <bpmn:sequenceFlow id="f3" sourceRef="merge" targetRef="review" />
+    <bpmn:sequenceFlow id="f4" sourceRef="review" targetRef="ok" />
+    <bpmn:sequenceFlow id="f5" name="Yes" sourceRef="ok" targetRef="send" />
+    <bpmn:sequenceFlow id="f6" sourceRef="send" targetRef="end" />
+    <bpmn:sequenceFlow id="f7" name="No" sourceRef="ok" targetRef="revise" />
+    <bpmn:sequenceFlow id="f8" sourceRef="revise" targetRef="merge" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_D5_purchase_order_loop">
+    <bpmndi:BPMNPlane id="Plane_D5_purchase_order_loop" bpmnElement="Process_D5_purchase_order_loop">
+      <bpmndi:BPMNShape id="start_di" bpmnElement="start">
+        <dc:Bounds x="102" y="82" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="77" y="50" width="86" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="create_di" bpmnElement="create">
+        <dc:Bounds x="215" y="65" width="110" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="merge_di" bpmnElement="merge">
+        <dc:Bounds x="395" y="75" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="review_di" bpmnElement="review">
+        <dc:Bounds x="515" y="65" width="110" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ok_di" bpmnElement="ok" isMarkerVisible="true">
+        <dc:Bounds x="695" y="75" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="670" y="43" width="100" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="send_di" bpmnElement="send">
+        <dc:Bounds x="815" y="65" width="110" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="end_di" bpmnElement="end">
+        <dc:Bounds x="1002" y="82" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="977" y="50" width="86" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="revise_di" bpmnElement="revise">
+        <dc:Bounds x="815" y="185" width="110" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="f1_di" bpmnElement="f1">
+        <di:waypoint x="138" y="100" />
+        <di:waypoint x="215" y="100" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f2_di" bpmnElement="f2">
+        <di:waypoint x="325" y="100" />
+        <di:waypoint x="395" y="100" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f3_di" bpmnElement="f3">
+        <di:waypoint x="445" y="100" />
+        <di:waypoint x="515" y="100" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f4_di" bpmnElement="f4">
+        <di:waypoint x="625" y="100" />
+        <di:waypoint x="695" y="100" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f5_di" bpmnElement="f5">
+        <di:waypoint x="745" y="100" />
+        <di:waypoint x="815" y="100" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="753" y="82" width="70" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f6_di" bpmnElement="f6">
+        <di:waypoint x="925" y="100" />
+        <di:waypoint x="1002" y="100" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f7_di" bpmnElement="f7">
+        <di:waypoint x="720" y="125" />
+        <di:waypoint x="720" y="220" />
+        <di:waypoint x="815" y="220" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="728" y="164" width="70" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f8_di" bpmnElement="f8">
+        <di:waypoint x="870" y="255" />
+        <di:waypoint x="870" y="290" />
+        <di:waypoint x="420" y="290" />
+        <di:waypoint x="420" y="125" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Defs_M5_resource_deadlock" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.0.0">
+  <bpmn:process id="Process_M5_resource_deadlock" name="M5 Loan approval - shared officer and credit system" isExecutable="false">
+    <bpmn:documentation>resources: officer=1, credit_system=1</bpmn:documentation>
+    <bpmn:startEvent id="start" name="Application received">
+      <bpmn:outgoing>f1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:task id="receive" name="Receive application">
+      <bpmn:documentation>time: 5</bpmn:documentation>
+      <bpmn:incoming>f1</bpmn:incoming>
+      <bpmn:outgoing>f2</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:parallelGateway id="and_split" name="">
+      <bpmn:incoming>f2</bpmn:incoming>
+      <bpmn:outgoing>f3</bpmn:outgoing>
+      <bpmn:outgoing>f6</bpmn:outgoing>
+    </bpmn:parallelGateway>
+    <bpmn:task id="a_officer" name="Assign loan officer">
+      <bpmn:documentation>time: 2; acquire: officer</bpmn:documentation>
+      <bpmn:incoming>f3</bpmn:incoming>
+      <bpmn:outgoing>f4</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="a_credit" name="Open credit system">
+      <bpmn:documentation>time: 1; acquire: credit_system</bpmn:documentation>
+      <bpmn:incoming>f4</bpmn:incoming>
+      <bpmn:outgoing>f5</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="assess" name="Credit assessment">
+      <bpmn:documentation>time: 25; release: officer, credit_system</bpmn:documentation>
+      <bpmn:incoming>f5</bpmn:incoming>
+      <bpmn:outgoing>f9</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="b_credit" name="Open credit system (fraud)">
+      <bpmn:documentation>time: 1; acquire: credit_system</bpmn:documentation>
+      <bpmn:incoming>f6</bpmn:incoming>
+      <bpmn:outgoing>f7</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="b_officer" name="Assign officer (fraud)">
+      <bpmn:documentation>time: 2; acquire: officer</bpmn:documentation>
+      <bpmn:incoming>f7</bpmn:incoming>
+      <bpmn:outgoing>f8</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="fraud" name="Fraud check">
+      <bpmn:documentation>time: 20; release: officer, credit_system</bpmn:documentation>
+      <bpmn:incoming>f8</bpmn:incoming>
+      <bpmn:outgoing>f10</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:parallelGateway id="and_join" name="">
+      <bpmn:incoming>f9</bpmn:incoming>
+      <bpmn:incoming>f10</bpmn:incoming>
+      <bpmn:outgoing>f11</bpmn:outgoing>
+    </bpmn:parallelGateway>
+    <bpmn:task id="decide" name="Make decision">
+      <bpmn:documentation>time: 15</bpmn:documentation>
+      <bpmn:incoming>f11</bpmn:incoming>
+      <bpmn:outgoing>f12</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="notify" name="Notify applicant">
+      <bpmn:documentation>time: 3</bpmn:documentation>
+      <bpmn:incoming>f12</bpmn:incoming>
+      <bpmn:outgoing>f13</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="end" name="Done">
+      <bpmn:incoming>f13</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="f1" sourceRef="start" targetRef="receive" />
+    <bpmn:sequenceFlow id="f2" sourceRef="receive" targetRef="and_split" />
+    <bpmn:sequenceFlow id="f3" sourceRef="and_split" targetRef="a_officer" />
+    <bpmn:sequenceFlow id="f4" sourceRef="a_officer" targetRef="a_credit" />
+    <bpmn:sequenceFlow id="f5" sourceRef="a_credit" targetRef="assess" />
+    <bpmn:sequenceFlow id="f6" sourceRef="and_split" targetRef="b_credit" />
+    <bpmn:sequenceFlow id="f7" sourceRef="b_credit" targetRef="b_officer" />
+    <bpmn:sequenceFlow id="f8" sourceRef="b_officer" targetRef="fraud" />
+    <bpmn:sequenceFlow id="f9" sourceRef="assess" targetRef="and_join" />
+    <bpmn:sequenceFlow id="f10" sourceRef="fraud" targetRef="and_join" />
+    <bpmn:sequenceFlow id="f11" sourceRef="and_join" targetRef="decide" />
+    <bpmn:sequenceFlow id="f12" sourceRef="decide" targetRef="notify" />
+    <bpmn:sequenceFlow id="f13" sourceRef="notify" targetRef="end" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_M5_resource_deadlock">
+    <bpmndi:BPMNPlane id="Plane_M5_resource_deadlock" bpmnElement="Process_M5_resource_deadlock">
+      <bpmndi:BPMNShape id="start_di" bpmnElement="start">
+        <dc:Bounds x="102" y="202" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="77" y="170" width="86" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="receive_di" bpmnElement="receive">
+        <dc:Bounds x="215" y="185" width="110" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="and_split_di" bpmnElement="and_split">
+        <dc:Bounds x="395" y="195" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="a_officer_di" bpmnElement="a_officer">
+        <dc:Bounds x="515" y="65" width="110" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="a_credit_di" bpmnElement="a_credit">
+        <dc:Bounds x="665" y="65" width="110" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="assess_di" bpmnElement="assess">
+        <dc:Bounds x="815" y="65" width="110" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="b_credit_di" bpmnElement="b_credit">
+        <dc:Bounds x="515" y="305" width="110" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="b_officer_di" bpmnElement="b_officer">
+        <dc:Bounds x="665" y="305" width="110" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fraud_di" bpmnElement="fraud">
+        <dc:Bounds x="815" y="305" width="110" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="and_join_di" bpmnElement="and_join">
+        <dc:Bounds x="995" y="195" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="decide_di" bpmnElement="decide">
+        <dc:Bounds x="1115" y="185" width="110" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="notify_di" bpmnElement="notify">
+        <dc:Bounds x="1265" y="185" width="110" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="end_di" bpmnElement="end">
+        <dc:Bounds x="1452" y="202" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1427" y="170" width="86" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="f1_di" bpmnElement="f1">
+        <di:waypoint x="138" y="220" />
+        <di:waypoint x="215" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f2_di" bpmnElement="f2">
+        <di:waypoint x="325" y="220" />
+        <di:waypoint x="395" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f3_di" bpmnElement="f3">
+        <di:waypoint x="420" y="195" />
+        <di:waypoint x="420" y="100" />
+        <di:waypoint x="515" y="100" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f4_di" bpmnElement="f4">
+        <di:waypoint x="625" y="100" />
+        <di:waypoint x="665" y="100" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f5_di" bpmnElement="f5">
+        <di:waypoint x="775" y="100" />
+        <di:waypoint x="815" y="100" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f6_di" bpmnElement="f6">
+        <di:waypoint x="420" y="245" />
+        <di:waypoint x="420" y="340" />
+        <di:waypoint x="515" y="340" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f7_di" bpmnElement="f7">
+        <di:waypoint x="625" y="340" />
+        <di:waypoint x="665" y="340" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f8_di" bpmnElement="f8">
+        <di:waypoint x="775" y="340" />
+        <di:waypoint x="815" y="340" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f9_di" bpmnElement="f9">
+        <di:waypoint x="925" y="100" />
+        <di:waypoint x="1020" y="100" />
+        <di:waypoint x="1020" y="195" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f10_di" bpmnElement="f10">
+        <di:waypoint x="925" y="340" />
+        <di:waypoint x="1020" y="340" />
+        <di:waypoint x="1020" y="245" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f11_di" bpmnElement="f11">
+        <di:waypoint x="1045" y="220" />
+        <di:waypoint x="1115" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f12_di" bpmnElement="f12">
+        <di:waypoint x="1225" y="220" />
+        <di:waypoint x="1265" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f13_di" bpmnElement="f13">
+        <di:waypoint x="1375" y="220" />
+        <di:waypoint x="1452" y="220" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
