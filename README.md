@@ -13,7 +13,7 @@ cd bpm-deadlock
 python -m venv venv
 # Windows:  venv\Scripts\activate        Mac/Linux:  source venv/bin/activate
 pip install -r requirements.txt
-python -m pytest -q          # should print: 16 passed
+python -m pytest -q          # should print: 51 passed
 streamlit run app.py         # opens http://localhost:8501
 ```
 
@@ -59,14 +59,14 @@ To regenerate every file: `python tools/generate_models.py`.
 | Step | Module | Input → output | Key function: what it does |
 |---|---|---|---|
 | 1 Model | `src/bpmn_parser.py` | .bpmn XML → nodes, flows | `parse_bpmn()` reads every event, task, gateway and arrow, plus the documentation notes |
-| 2 Petri net | `src/transformer.py` | BPMN model → Petri net | `bpmn_to_petri()`: each flow becomes a place, each task a transition; AND = one transition, XOR = one transition per branch |
+| 2 Petri net | `src/transformer.py` | BPMN model → Petri net | `bpmn_to_petri()`: each flow becomes a place, each task a transition; AND = one transition, XOR = one transition per branch (rules of Zhang et al.); `check_mapping()` is their Algorithm 1 |
 | | `src/petri_net.py` | places, transitions, arcs | `enabled(m)`: t can fire if all its input places have tokens; `fire(t, m)`: moves the tokens |
-| 3a Detect | `src/structural.py` | BPMN graph → patterns P1–P6 | `check()`: fast pattern search (Awad & Puhlmann), points at the bad gateway |
-| 3b Detect | `src/reachability.py` | net → all reachable markings | `analyse()`: BFS over all states. A state where nothing can fire and the end is not reached is a deadlock. Also checks the three soundness rules |
+| 3a Detect | `src/structural.py` | BPMN graph → patterns P1–P6 | `check()`: fast search for the violation causes listed by Kräuter et al., points at the bad gateway |
+| 3b Detect | `src/reachability.py` | net → all reachable markings | `analyse()`: BFS over all states (Kräuter et al.). A state where nothing can fire and the end is not reached is a deadlock. Also checks the three soundness rules and safeness; a run that hits the state limit is *inconclusive* |
 | 4 Cause | `src/diagnosis.py` | dead marking → explanation | `explain()`: "AND-join has a token from Credit check but is still waiting for Documents complete" |
 | | `src/siphons.py` | net → siphons | `minimal_siphons()`: place sets that, once empty, never refill (resource deadlocks) |
-| 5 Fix | `src/prevention.py` | issue → fixed model | `fix_gateways()` changes the wrong join; `add_monitors()` adds a siphon control place (Hu et al.) |
-| 6 Verify | `src/pipeline.py` | runs 1→6 | `run_pipeline()`: runs everything and re-analyses the fixed model |
+| 5 Fix | `src/prevention.py` | issue → fixed model | `fix_gateways()` changes the wrong join; `alternative_fixes()` offers the split-side quick fix (Kräuter et al.); `add_monitors()` adds a siphon control place and `permissiveness()` checks no good state is lost (Wang et al.) |
+| 6 Verify | `src/pipeline.py`, `src/evolution.py` | runs 1→6 | `run_pipeline()` re-analyses the fixed model; `detect_changes()` lists the insert/delete/replace operations between two versions (Zhang et al., Alg. 2) |
 | Extra | `src/simulate.py` | net + times + probabilities | `run_cases()`: simulates 1000 timed cases |
 | UI | `app.py`, `src/visualize.py` | — | Streamlit pages and the DOT drawings |
 
@@ -86,3 +86,11 @@ To regenerate every file: `python tools/generate_models.py`.
 - `results/results.csv`, `results/figures/`: tables and figures used in the report (`python tools/make_figures.py`, needs Graphviz).
 - `tools/crosscheck_pm4py.py`: compares our soundness results with pm4py (all 14 match).
 - `tools/screenshots.py`: takes app screenshots (needs Playwright).
+
+## 5. Papers the method is based on
+
+| Paper | What we use |
+|---|---|
+| T. Kräuter et al., *Instantaneous, Comprehensible, and Fixable Soundness Checking of Realistic BPMN Models*, arXiv:2407.03965, 2024 | state-space soundness + safeness check, violation causes (patterns), quick fixes with alternatives, parallel-branch benchmark (`python tools/benchmark_parallel.py`) |
+| Z. Zhang et al., *Collaborative Modeling of BPMN and HCPN*, Information 16(4):323, 2025 | BPMN→Petri net element rules, mapping-correctness check (Alg. 1), insert/delete/replace change detection (Alg. 2) |
+| S. G. Wang et al., *A Refined Siphon-Based Deadlock Prevention Policy for a Class of Petri Nets*, IEEE TSMC: Systems 53(1):191–203, 2023 | one unit-weight monitor per problem siphon, maximal permissiveness as the quality measure |

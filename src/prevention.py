@@ -1,13 +1,19 @@
 """Step 5 - prevention / correction rules.
 
-  Cause                                   Rule
-  --------------------------------------  ----------------------------------------
-  XOR-split closed by AND-join (P1)       change the join to an XOR-join
-  AND-join at a loop entry (P2)           change the join to an XOR-join
-  AND-split closed by XOR-join (P3)       change the join to an AND-join
+Control-flow errors are repaired with "quick fixes" in the sense of Kraeuter
+et al. (BPM 2024): the goal is matching gateways, and there are two candidate
+fixes for a split/join mismatch - change the join, or change the split.  Both
+candidates are re-verified, and the user chooses (the join fix is the default
+because it keeps the business decision encoded in the split).
+
+  Cause                                   Default fix (join)        Alternative (split)
+  --------------------------------------  ------------------------  -------------------
+  XOR-split closed by AND-join (P1)       join -> XOR-join          split -> AND-split
+  AND-join at a loop entry (P2)           join -> XOR-join          -
+  AND-split closed by XOR-join (P3)       join -> AND-join          split -> XOR-split
   dead end / missing recovery (P4)        add a recovery path (model-level, by design)
-  circular wait on resources (P6)         add a control place (monitor) for every
-                                          problem siphon - Hu et al. 2011, Li & Zhou
+  circular wait on resources (P6)         one monitor (control place) per problem
+                                          siphon - Wang et al. (IEEE TSMC 2023)
 
 The gateway rules are applied directly to the BPMN XML, so the fixed model can
 be downloaded and opened in Camunda Modeler.  The siphon rule is applied to
@@ -51,8 +57,43 @@ def fix_gateways(xml_text, issues, labels=None):
     return new_xml, changes
 
 
+def alternative_fixes(issues):
+    """The split-side quick fix for each P1/P3 issue (Kraeuter et al.)."""
+    alts = []
+    for iss in issues:
+        if iss["code"] in ("P1", "P3") and iss.get("auto_fix"):
+            split = iss["nodes"][0]
+            alts.append({**iss, "auto_fix": {"node": split, "new_kind": "and" if iss["code"] == "P1" else "xor"}})
+    return alts
+
+
+def permissiveness(net, result, fixed_net, fixed_result):
+    """How much good behaviour a monitor keeps (Wang et al.: maximal permissiveness).
+
+    A state of the original net is GOOD if the final marking can still be
+    reached from it.  We project every reachable state of the controlled net onto
+    the original places and count how many good states survive.  A controller
+    is maximally permissive when it keeps all of them (ratio 1.0).
+    """
+    from .reachability import key
+    bad = {d["index"] for d in result["dead_markings"]} | set(result["livelock_states"])
+    good = {key(m) for i, m in enumerate(result["graph"].markings) if i not in bad}
+    kept = {key({p: n for p, n in m.items() if p in net.places}) for m in fixed_result["graph"].markings}
+    monitor_weights = [w for t in fixed_net.transitions
+                       for arcs in (fixed_net.pre[t], fixed_net.post[t])
+                       for p, w in arcs.items() if fixed_net.places[p].kind == "monitor"]
+    return {"good_states": len(good), "kept": len(good & kept), "ratio": len(good & kept) / max(len(good), 1),
+            "maximally_permissive": good <= kept, "unit_weights": all(w == 1 for w in monitor_weights)}
+
+
 def add_monitors(net, siphons):
     """Add one control place V_S per siphon S so S can never become empty.
+
+    This is the siphon-control step of Wang et al. (IEEE TSMC 2023, stage 2).
+    Their stage 1 finds the siphons with mixed-integer programming; we find them
+    from the dead markings instead (siphons.problem_siphons).  For our nets every
+    resource has one unit, the class Wang et al. study, and all monitor arcs
+    then have weight 1, as in their policy.
 
     For every transition t let d(t) = tokens t puts into S - tokens t takes from S.
     The monitor V_S gets an arc  t -> V_S  of weight d(t) when d(t) > 0

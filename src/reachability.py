@@ -1,7 +1,10 @@
-"""Step 3b - reachability analysis (Hu, Zhu and Lei 2011).
+"""Step 3b - state-space (reachability) analysis.
 
-We build the reachability graph: every marking the net can reach from M0,
-found with a breadth-first search, and the transitions between them.
+Following Kraeuter et al. (BPM 2024) we explore the whole state space with a
+breadth-first search and check every property on the way.  Like their
+"pragmatic encoding", a task is ONE transition (no separate start/end), which
+keeps the state space small: for n parallel branches of length m we get
+(m+1)^n + 4 states, against (m+1)^n + 3 in their Rust tool.
 
 A marking M is DEAD if no transition is enabled in it.
   * dead and M == Mf                -> normal completion
@@ -12,6 +15,14 @@ Soundness of a workflow net (van der Aalst) is also checked:
   1. option to complete : Mf can be reached from every reachable marking
   2. proper completion  : no reachable marking puts a token in 'o' with others left over
   3. no dead transitions: every transition fires in at least one run
+
+Safeness (Kraeuter et al.) is checked as well: no sequence flow may ever hold
+two tokens.  An unsafe flow points at a missing synchronisation (e.g. an
+AND-split closed by an XOR-join).  It is reported separately and does not
+change the soundness verdict.
+
+If the search hits MAX_STATES (or a place exceeds UNBOUNDED_LIMIT) the verdict
+is "inconclusive", not "unsound": the part we did not explore may be fine.
 """
 from collections import deque
 from dataclasses import dataclass, field
@@ -33,6 +44,7 @@ class ReachabilityGraph:
     parent: dict = field(default_factory=dict)     # idx -> (prev_idx, transition_id)
     truncated: bool = False
     unbounded: bool = False
+    cut: set = field(default_factory=set)          # states whose successors were not explored
 
     def succ(self):
         s = {i: [] for i in range(len(self.markings))}
@@ -65,9 +77,11 @@ def build_graph(net, max_states=MAX_STATES):
             if k not in index:
                 if len(rg.markings) >= max_states:
                     rg.truncated = True
+                    rg.cut.add(i)
                     continue
                 if any(n > UNBOUNDED_LIMIT for n in m2.values()):
                     rg.unbounded = True
+                    rg.cut.add(i)
                     continue
                 index[k] = len(rg.markings)
                 rg.markings.append(m2)
@@ -90,7 +104,7 @@ def analyse(net, max_states=MAX_STATES):
     succ = rg.succ()
     final_key = key(net.mf)
 
-    dead = [i for i, out in succ.items() if not out]
+    dead = [i for i, out in succ.items() if not out and i not in rg.cut]
     problems = []
     for i in dead:
         kind = classify(net, rg.markings[i])
@@ -120,6 +134,12 @@ def analyse(net, max_states=MAX_STATES):
 
     option_to_complete = len(can_finish) == len(rg.markings) and not rg.truncated
     sound = option_to_complete and proper and not dead_transitions and not rg.unbounded
+    unsafe_flows = sorted({p for m in rg.markings for p, n in m.items()
+                           if n > 1 and net.places[p].kind == "flow"})
+    if rg.truncated and not problems:
+        verdict = "inconclusive"
+    else:
+        verdict = "sound" if sound else "unsound"
     return {
         "graph": rg,
         "states": len(rg.markings),
@@ -133,6 +153,9 @@ def analyse(net, max_states=MAX_STATES):
         "dead_transitions": dead_transitions,
         "final_reachable": bool(finals),
         "sound": sound,
+        "verdict": verdict,
+        "safe": not unsafe_flows,
+        "unsafe_flows": unsafe_flows,
         "truncated": rg.truncated,
         "unbounded": rg.unbounded,
         "time_ms": (time.perf_counter() - t0) * 1000,

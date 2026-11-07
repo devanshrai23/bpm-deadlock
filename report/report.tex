@@ -37,55 +37,69 @@ Business process models drawn in BPMN can contain synchronisation errors, missin
 conflicting resource use that leave a running case stuck before it reaches its end. Such deadlocks are hard to see
 by looking at a diagram. We present a six-step framework and a Python tool that (1) reads a BPMN~2.0 model,
 (2) maps it to a workflow Petri net, (3) detects deadlocks with a fast structural pattern check and an exhaustive
-reachability analysis, (4) explains the cause with a witness trace and siphon analysis, (5) applies a prevention
-rule, and (6) re-verifies the corrected model for soundness. We apply it to a Loan Approval process built up in
+state-space analysis of soundness and safeness, (4) explains the cause with a witness trace and siphon analysis,
+(5) applies a quick fix or a siphon-control place, and (6) re-verifies the corrected model for soundness. We apply it to a Loan Approval process built up in
 six models of increasing complexity, plus five models from other domains. Of the 14 models, 7 are unsound:
 four deadlock through control-flow errors, two through circular waits on shared resources, and one completes improperly. Every one
 of them is corrected and re-verified as sound, and every analysis finishes in under 2~ms. Our soundness verdicts match the
-independent pm4py/WOFLAN checker on all 14 models. A timed simulation of the final model with branch
+independent pm4py/WOFLAN checker on all 14 models, the siphon-control places keep every good state (maximally
+permissive), and on the parallel-branch benchmark of Kr\"auter et al.\ our state spaces match theirs to within one
+state. A timed simulation of the final model with branch
 probabilities completes 100\% of 1000 cases with a mean cycle time of 62.4 minutes.
 \end{abstract}
 
 \begin{IEEEkeywords}
-BPMN, Petri nets, deadlock, soundness, reachability graph, siphon, workflow nets, business process verification
+BPMN, Petri nets, deadlock, soundness, safeness, siphon, deadlock prevention, quick fixes, business process verification
 \end{IEEEkeywords}
 
 \section{Introduction}
 \IEEEPARstart{O}{rganisations} describe their workflows, such as loan approval, order handling and claim processing,
 as business process models, most often in the Business Process Model and Notation (BPMN)~\cite{bpmn}.
-BPMN is easy to read but has no formal semantics, so a model can look correct and still contain behavioural
-errors~\cite{mutarraf}. The most harmful of these is a \emph{deadlock}: a case reaches a state in which no
+BPMN is easy to read but lacks precise formal semantics, so a model can look correct and still contain
+behavioural errors~\cite{zhang,kraeuter}. The most harmful of these is a \emph{deadlock}: a case reaches a state in which no
 activity can continue, although the process has not finished. In a loan process this means an application
 that is never approved or rejected.
 
 Petri nets give a precise, graphical and mathematical model of states, activities and concurrency~\cite{murata}.
 Once a BPMN model is mapped to a Petri net, deadlocks become reachable markings in which no transition is
-enabled, and they can be found mechanically~\cite{hu}.
+enabled, and they can be found mechanically~\cite{kraeuter}.
 
 \textbf{Research question.} \emph{How can Petri nets be used to detect and prevent deadlocks in business
 process models while preserving correct workflow behaviour?}
 
 \textbf{Contributions.} (i) A six-step framework that links BPMN modelling, Petri-net conversion, detection,
 diagnosis, correction and re-verification; (ii) a Python implementation with a Streamlit interface that
-combines the structural approach of~\cite{awad}, the reachability and siphon methods of~\cite{hu} and the BPMN
-mapping with time and probability of~\cite{mutarraf}; (iii) a Loan Approval case study of six models,
-from a simple sequence to a timed model with shared resources, with before/after results.
+combines the soundness and safeness checking and quick fixes of Kr\"auter et al.~\cite{kraeuter}, the BPMN-to-Petri-net
+mapping, mapping check and evolution operations of Zhang et al.~\cite{zhang}, and the siphon-based deadlock
+prevention of Wang et al.~\cite{wang}, extended with shared resources, time and probabilities; (iii) a Loan
+Approval case study of six models, from a simple sequence to a timed model with shared resources, with
+before/after results and a scalability benchmark.
 
 \section{Related Work}
-Hu, Zhu and Lei~\cite{hu} review two ways to detect deadlocks in Petri nets: structural analysis of the net and
-analysis of the reachability tree. They note that structural results ignore the initial marking, while the
-reachability tree covers every reachable state, and they recommend combining the two. For prevention they
-summarise the basic-siphon method of Li and Zhou~\cite{lizhou}, which adds a control place for each basic
-strict minimal siphon.
+\textbf{Soundness checking of BPMN.} Kr\"auter et al.~\cite{kraeuter} present a BPMN soundness checker that is
+\emph{instantaneous} (under 500~ms), \emph{comprehensible} and \emph{fixable}. It explores the full state space with a
+breadth-first search and checks option to complete, proper completion, no dead activities and \emph{safeness} (no
+sequence flow ever holds two tokens) on the fly. A task is encoded as a single step, which keeps the state space small.
+Violations are highlighted in the diagram and counterexamples are replayed as moving tokens. For common violations
+the tool offers IDE-style \emph{quick fixes}. A split/join mismatch, for example, can be repaired either at the join
+or at the split, and the user chooses. Their tool does not check custom properties, data or time, and it has no
+notion of shared resources.
 
-Awad and Puhlmann~\cite{awad} detect deadlocks directly on BPMN diagrams through graphical BPMN-Q queries that
-match error patterns, such as an XOR-split closed by an AND-join. Their method runs in polynomial time and points
-at the faulty sub-graph, but it is not complete.
+\textbf{Formal mapping and model evolution.} Zhang et al.~\cite{zhang} map BPMN to hierarchical coloured Petri nets
+(HCPN) with element-level rules (start, intermediate and end events, tasks, parallel and exclusive gateways,
+sub-processes, sequence and message flows). They check the mapping with a correspondence and connectivity test
+(their Algorithm~1). They describe changes to a process as atomic \emph{insert}, \emph{delete} and \emph{replace}
+operations found by comparing two versions of the model (Algorithm~2), and they verify each evolved model by
+state-space analysis in CPN Tools (dead markings, dead transitions, reachability).
 
-Mutarraf et al.~\cite{mutarraf} transform BPMN XML into Petri nets automatically, extend the mapping with firing
-times on transitions and probabilities on gateways, and analyse the result in MATLAB/GPenSIM. Our mapping
-follows their rules and those of Dijkman et al.~\cite{dijkman}. The correctness criterion we use is the
-soundness of workflow nets defined by van der Aalst~\cite{aalst}.
+\textbf{Siphon-based deadlock prevention.} Wang et al.~\cite{wang} prevent deadlocks in Petri nets in which every
+resource place initially holds one token. In a first stage, mixed-integer programming finds a specific kind of
+emptiable siphon, avoiding both full siphon enumeration and reachability analysis. In a second stage, a monitor
+(control place) with unit arc weights is added for each such siphon. The resulting supervisor is \emph{maximally
+permissive}: it forbids only the states that lead to a deadlock.
+
+Our work combines these three lines for one practical goal: finding, explaining and removing deadlocks in BPMN
+models that also share resources. The correctness criterion is the soundness of workflow nets~\cite{aalst}.
 
 \section{Preliminaries}
 \textbf{Petri net.} A Petri net is $N=(P,T,F,W)$ with finite disjoint sets of places $P$ and transitions $T$,
@@ -123,8 +137,10 @@ M\in R(N,M_0),\quad M\neq M_f,\quad \nexists\, t\in T: M[t\rangle .
 \textbf{Soundness}~\cite{aalst}. A workflow net is sound if (1) from every reachable marking $M_f$ can still be reached
 (option to complete), (2) whenever $o$ is marked, no other token remains (proper completion), and (3) every
 transition can fire in some run (no dead transitions).
+Following~\cite{kraeuter} we also check \emph{safeness}: no place that stands for a sequence flow ever holds more than
+one token. An unsafe flow points to a missing synchronisation.
 
-\textbf{Siphon}~\cite{hu}. A non-empty set $S\subseteq P$ is a siphon if ${}^\bullet S\subseteq S^\bullet$, that is,
+\textbf{Siphon}~\cite{wang,murata}. A non-empty set $S\subseteq P$ is a siphon if ${}^\bullet S\subseteq S^\bullet$, that is,
 every transition that puts a token into $S$ also takes one from $S$. A siphon that becomes empty can never be
 marked again, so every transition that needs one of its places is dead from then on.
 
@@ -145,8 +161,12 @@ the standard \texttt{documentation} field, so the files stay valid BPMN. We use 
 officer=1}, \texttt{acquire/release/uses: officer}, \texttt{time: 20} and \texttt{prob: 0.3}.
 
 \subsection{Step 2: BPMN to Petri net}
-Table~\ref{tab:map} gives the mapping, following~\cite{mutarraf,dijkman}. Every sequence flow becomes a place,
-so every token can be traced back to an arrow in the diagram.
+Table~\ref{tab:map} gives the mapping. It follows the element rules of Zhang et al.~\cite{zhang} without colours and
+hierarchy, and like the pragmatic encoding of~\cite{kraeuter} it fires a task as one transition instead of separate
+start and end events. Every sequence flow becomes a place, so every token can be traced back to an arrow in the
+diagram. After the mapping, the correspondence and connectivity check of~\cite{zhang} (Algorithm~1) confirms that
+every BPMN element has a transition, every sequence flow has a place, and that place is produced by the flow's source
+and consumed by its target.
 
 \begin{table}[t]
 \caption{BPMN to Petri net mapping}
@@ -170,42 +190,60 @@ Element without outgoing flow & a ``stuck'' place that is never consumed \\
 \end{table}
 
 \subsection{Step 3: Deadlock detection}
-\emph{a) Structural check.} Following~\cite{awad}, we search the BPMN graph for six patterns: P1, an XOR/OR-split
-whose branches are closed by an AND-join; P2, an AND-join at a loop entry; P3, an AND-split closed by an XOR-join
-(lack of synchronisation); P4, an element with no outgoing flow; P5, an unreachable element; and P6, two
-resources taken in opposite orders on different paths. For P1 we walk forward from every branch of a split.
+\emph{a) Structural check.} Kr\"auter et al.~\cite{kraeuter} list the typical causes of each soundness violation:
+a parallel gateway that waits for flows that never all arrive (option to complete), an exclusive gateway that merges
+parallel flows (safeness and proper completion), and a disconnected activity (no dead activities). They find the cause
+after a counterexample has been found. We also search for these causes directly in the BPMN graph, before any state
+is explored, as six patterns: P1, an XOR/OR-split whose branches are closed by an AND-join; P2, an AND-join at a loop
+entry; P3, an AND-split closed by an XOR-join; P4, an element with no outgoing flow; P5, an unreachable element; and
+P6, two resources taken in opposite orders on different paths (a circular wait, see Step~4). For P1 we walk forward from every branch of a split.
 The pattern holds if one branch reaches an incoming flow $a$ of the join but not another incoming flow $b$, while
 a second branch reaches $b$ but not $a$.
 
-\emph{b) Reachability analysis.} Following~\cite{hu}, a breadth-first search builds the reachability graph from
+\emph{b) State-space analysis.} As in~\cite{kraeuter}, a breadth-first search builds the reachability graph from
 $M_0$, storing for each new marking the marking and transition it was reached from. Every dead marking other
 than $M_f$ is reported together with its \emph{witness trace}, the firing sequence that leads to it. A reverse
-search from $M_f$ checks the option to complete, and the three soundness rules are evaluated. The search stops at
-20{,}000 states, or when a place holds more than 50 tokens (treated as unbounded).
+search from $M_f$ checks the option to complete, and the three soundness rules and safeness are evaluated. The
+search stops at 20{,}000 states, or when a place holds more than 50 tokens (treated as unbounded). In that case the
+verdict is reported as \emph{inconclusive} rather than unsound, and the states at the cut-off are not counted as
+dead.
 
 \subsection{Step 4: Cause identification}
-For each dead marking we list the marked places and, for each one, the transition that is waiting and the input
-places it still lacks. Those transitions are mapped back to their BPMN elements and outlined in red in the diagram.
-For resource deadlocks we compute the minimal siphons, leaving out the source place, which empties by design.
-A siphon that is marked in $M_0$ but empty in a dead marking identifies the circular wait.
+Like~\cite{kraeuter}, we find the cause from the last state of the counterexample. For each dead marking we list
+the marked places and, for each one, the transition that is waiting and the input places it still lacks. Those transitions are mapped back to their BPMN elements and outlined in red in the diagram.
+For resource deadlocks we look for emptiable siphons, as in~\cite{wang}. Wang et al.\ find them with mixed-integer
+programming. Our nets are small, so we enumerate the minimal siphons (leaving out the source place, which empties by
+design) and keep those that are marked in $M_0$ but empty in a dead marking. Such a siphon identifies the circular
+wait.
 
 \subsection{Step 5: Prevention rules}
+Control-flow errors are repaired with \emph{quick fixes} in the sense of~\cite{kraeuter}, whose goal is matching
+gateways. A split/join mismatch has two candidate fixes, at the join or at the split. Both are generated and
+re-verified. The join fix is applied by default because it keeps the business decision made at the split.
 \begin{itemize}
-\item \emph{P1/P2:} make the join match the split by replacing the AND-join with an XOR-join.
-\item \emph{P3:} replace the XOR-join with an AND-join.
+\item \emph{P1/P2:} replace the AND-join with an XOR-join (alternative for P1: make the split an AND-split).
+\item \emph{P3:} replace the XOR-join with an AND-join (alternative: make the split an XOR-split).
 \item \emph{P4 (missing recovery path):} redesign the model with a resubmission loop and a coordinated
 rejection path, so the join always receives a result.
-\item \emph{P6 (circular wait):} for each problem siphon $S$, add a control place $V_S$~\cite{hu,lizhou,yamalidou}.
+\item \emph{P6 (circular wait):} following the siphon-control stage of~\cite{wang}, for each problem siphon $S$ add a
+control place $V_S$, built from a place invariant~\cite{murata}.
 With $d(t)=\sum_{p\in S}\big(W(t,p)-W(p,t)\big)$, we add an arc $t\to V_S$ of weight $d(t)$ when
 $d(t)>0$ and an arc $V_S\to t$ of weight $-d(t)$ when $d(t)<0$, and set $M_0(V_S)=M_0(S)-1$. Then
-$M(V_S)-M(S)=-1$ holds in every reachable marking, so $M(S)\ge1$ and $S$ is never emptied.
+$M(V_S)-M(S)=-1$ holds in every reachable marking, so $M(S)\ge1$ and $S$ is never emptied. All our resources have one
+unit, the net class of~\cite{wang}, and all monitor arcs then have weight~1. To check permissiveness we project the
+states of the controlled net onto the original places and count how many \emph{good} states (from which $M_f$ is
+still reachable) are kept. A controller that keeps all of them is maximally permissive.
 \end{itemize}
 The gateway rules are applied to the BPMN XML itself, so the corrected model can be opened again in the modeller.
 
 \subsection{Step 6: Re-analysis and verification}
-Steps 2--3 are repeated on the corrected model. It is accepted when it has no dead marking other than $M_f$, it is
-sound, and every path that completed correctly before still completes. For the final model we also run a timed
-simulation~\cite{mutarraf}. Transitions take their inputs when they start and give their outputs after their
+Following the evolution view of~\cite{zhang}, a correction is a change of the process model made of atomic
+\emph{insert}, \emph{delete} and \emph{replace} operations. We compute these operations between the faulty and the
+corrected model (their Algorithm~2, with operations labelled as in their Section~4.4), so the user sees exactly which
+part was changed. Steps 2--3 are then repeated on the corrected model. It is accepted when it has no dead marking
+other than $M_f$, it is sound, and every path that completed correctly before still completes. None of the three
+approaches handles time, and~\cite{zhang} names timed nets as future work. As our own extension, we run a timed
+simulation of the final model. Transitions take their inputs when they start and give their outputs after their
 duration, XOR branches are drawn with the given probabilities, and we report the completion rate and cycle times.
 
 \section{Implementation}
@@ -230,13 +268,14 @@ is used only to cross-check our soundness results.
 Module & What it does \\
 \midrule
 \texttt{bpmn\_parser} & \texttt{parse\_bpmn()} reads the XML into nodes, flows, annotations \\
-\texttt{transformer} & \texttt{bpmn\_to\_petri()} applies Table~\ref{tab:map} \\
+\texttt{transformer} & \texttt{bpmn\_to\_petri()} applies Table~\ref{tab:map}; \texttt{check\_mapping()} \\
 \texttt{petri\_net} & \texttt{enabled()}, \texttt{fire()} implement the firing rule \\
 \texttt{structural} & \texttt{check()} finds patterns P1--P6 \\
-\texttt{reachability} & \texttt{analyse()} builds the graph, finds dead markings, checks soundness \\
+\texttt{reachability} & \texttt{analyse()} builds the graph, finds dead markings, checks soundness and safeness \\
 \texttt{siphons} & \texttt{minimal\_siphons()}, \texttt{problem\_siphons()} \\
 \texttt{diagnosis} & \texttt{explain()} says which transition waits for which place \\
-\texttt{prevention} & \texttt{fix\_gateways()}, \texttt{add\_monitors()} \\
+\texttt{prevention} & \texttt{fix\_gateways()}, \texttt{alternative\_fixes()}, \texttt{add\_monitors()}, \texttt{permissiveness()} \\
+\texttt{evolution} & \texttt{detect\_changes()} lists insert/delete/replace operations \\
 \texttt{simulate} & \texttt{run\_cases()} runs the timed, probabilistic simulation \\
 \texttt{app.py} & Streamlit interface: diagram, net, detection, fix, token game, simulation \\
 \bottomrule
@@ -349,10 +388,51 @@ ordering directly in the diagram.
 
 \textbf{Demo models.} D2 and D5 show P1 and P2 in other domains. D3 is unsound without a deadlock: the XOR-join
 lets both parallel branches through, so ``Update team calendar'' runs twice and two tokens reach the end.
-This improper completion is caught by soundness rule 2. D4 repeats the circular-wait pattern with a bed and a doctor.
+This improper completion is caught by soundness rule 2, and D3 is the only model that is not safe: both flows after
+the XOR-join can hold two tokens. D4 repeats the circular-wait pattern with a bed and a doctor.
+
+\textbf{Alternative quick fixes.} The split-side fixes of~\cite{kraeuter} are also sound: making ``Risk level?'' in M3
+an AND-split (12 states), making ``Claim size?'' in D2 an AND-split (10 states), and making the AND-split of D3 an
+XOR-split (10 states). They change what the business does (e.g.\ every application gets both reviews), so they are
+offered but not applied by default.
+
+\textbf{Permissiveness of the control places.} In M5 the original net has 19 good states and the controlled net keeps
+all 19; in D4 it keeps 18 of 18. Both controllers are therefore maximally permissive in the sense of~\cite{wang}, and
+all their arcs have weight~1.
+
+\textbf{Evolution operations.} The change detection of~\cite{zhang} describes each hand correction: M3$\to$M3-fixed is
+a single \emph{replace} (the join's type), M5$\to$M5-fixed is three \emph{replace} operations (the fraud branch's
+flows re-ordered), and the M4 redesign consists of 20 \emph{insert}, 1 \emph{delete} and 7 \emph{replace} operations.
+The mapping check of~\cite{zhang} reports no error for any of the 14 models.
 
 \textbf{Cross-check.} pm4py's WOFLAN check~\cite{pm4py} reads the control flow only. On the control flow of all
 14 models, its soundness verdict matches ours. All our analyses take under 2~ms per model.
+
+\subsection{Scalability}
+To compare with~\cite{kraeuter}, we generated their worst-case benchmark: an AND-split into $n$ branches of $m$ tasks
+each. Table~\ref{tab:bench} shows that our state counts are theirs plus one in every case (our start event has its own
+transition), so the two encodings are equally compact. Our Python tool is slower than their Rust tool but still checks
+all rows up to 9{,}265 states in about 0.35~s. At 15 parallel branches it reaches the 20{,}000-state limit and reports
+an inconclusive verdict.
+
+\begin{table}[t]
+\caption{Parallel-branch benchmark of~\cite{kraeuter} (states)}
+\label{tab:bench}
+\centering
+\begin{tabular}{@{}rrrrl@{}}
+\toprule
+Branches & Length & Ours & \cite{kraeuter} & Our verdict \\
+\midrule
+5 & 1 & 36 & 35 & sound \\
+10 & 1 & 1{,}028 & 1{,}027 & sound \\
+5 & 3 & 1{,}028 & 1{,}027 & sound \\
+5 & 5 & 7{,}780 & 7{,}779 & sound \\
+3 & 10 & 1{,}335 & 1{,}334 & sound \\
+3 & 20 & 9{,}265 & 9{,}264 & sound \\
+15 & 1 & $\ge$20{,}000 & 32{,}771 & inconclusive \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsection{Simulation of the final model}
 With the durations and probabilities shown in the model (e.g.\ 30\% high-risk applications, 25\% incomplete
@@ -368,47 +448,45 @@ branches start at the same moment, every simulated case deadlocks. With the cont
 \end{figure}
 
 \section{Discussion}
-The two detection methods complement each other, as~\cite{hu} suggests. The structural check is instant and names
-the faulty gateways, but it is a heuristic: it can miss errors and, in unusual structures, raise false alarms. The
-reachability analysis is complete and gives a concrete witness trace, but the number of states can grow
-exponentially with concurrency (state explosion). Our largest model has 82 states, which is far below the limit. For much larger
-models, reduction rules or partial-order methods would be needed.
+The two detection methods complement each other. The structural check is instant and names the faulty gateways,
+but it is a heuristic: it can miss errors and, in unusual structures, raise false alarms. The state-space analysis is
+complete and gives a concrete witness trace, but the number of states can grow exponentially with concurrency (state
+explosion), as the benchmark shows. Our largest case-study model has 82 states, far below the limit. For much larger
+models, partial-order reduction~\cite{kraeuter}, hierarchical decomposition into modules~\cite{zhang}, or finding
+problem siphons by mixed-integer programming instead of from the state space~\cite{wang} would be needed.
 
 The corrections preserve correct behaviour. A gateway fix only removes runs that ended in a deadlock, and every
 run that completed before still completes. The siphon control place only delays one branch until the other
-releases its resources, so no activity is removed.
+releases its resources, so no activity is removed, and the permissiveness check confirms that no good state is lost.
 
-\textbf{Limitations.} OR-joins are approximated as XOR-joins. Event sub-processes, boundary events and message
-flows are not translated. The times and probabilities in M6 are assumed values, not data from a real bank. The
+\textbf{Limitations.} OR-joins are approximated as XOR-joins. Sub-processes, pools, boundary events and message
+flows are not translated (the hierarchical mapping of~\cite{zhang} covers sub-processes and message flows). Each
+model is analysed for a single case, so resource conflicts between concurrent cases are not covered. Problem siphons
+are found from the state space, not by the MIP of~\cite{wang}. The times and probabilities in M6 are assumed values, not data from a real bank. The
 recovery redesign for P4 cannot be automated, because it is a business decision.
 
 \section{Conclusion and Future Work}
 We showed that Petri nets give a practical way to detect, explain and prevent deadlocks in BPMN models. Combining
-pattern-based structural checks with reachability and siphon analysis found every injected error in our 14 models,
-identified its cause, and confirmed each correction as sound. Future work includes full OR-join semantics,
-state-space reduction for large models, learning times and probabilities from event logs, and checking
-models while they are being drawn.
+pattern-based structural checks with state-space and siphon analysis found every injected error in our 14 models,
+identified its cause, and confirmed each correction as sound, with control places that are maximally permissive.
+Future work follows the three papers we build on: MIP-based siphon detection~\cite{wang} for large nets; coloured
+tokens for several concurrent cases and hierarchical sub-processes~\cite{zhang}, so that resource conflicts between
+loan applications can be analysed; and replaying counterexamples on the BPMN diagram itself~\cite{kraeuter}. Further
+items are full OR-join semantics and learning times and probabilities from event logs.
 
 \begin{thebibliography}{10}
-\bibitem{hu} W. Hu, Y. Zhu, and J. Lei, ``The detection and prevention of deadlock in Petri nets,''
-\emph{Physics Procedia}, vol.~22, pp.~656--659, 2011, doi: 10.1016/j.phpro.2011.11.102.
-\bibitem{awad} A. Awad and F. Puhlmann, ``Structural detection of deadlocks in business process models,'' in
-\emph{Business Information Systems (BIS 2008)}, LNBIP, vol.~7. Berlin, Germany: Springer, 2008, pp.~239--250,
-doi: 10.1007/978-3-540-79396-0\_21.
-\bibitem{mutarraf} M. U. Mutarraf, K. Barkaoui, Z. Li, N. Wu, and T. Qu, ``Transformation of business process
-model and notation models onto Petri nets and their analysis,'' \emph{Advances in Mechanical Engineering},
-vol.~10, no.~12, pp.~1--21, 2018, doi: 10.1177/1687814018808170.
+\bibitem{kraeuter} T. Kr\"auter, P. St\"unkel, A. Rutle, H. K\"onig, and Y. Lamo, ``Instantaneous, comprehensible, and
+fixable soundness checking of realistic BPMN models,'' arXiv:2407.03965 [cs.SE], 2024.
+\bibitem{zhang} Z. Zhang, F. Ni, J. Liu, N. Chen, and X. Zhou, ``Collaborative modeling of BPMN and HCPN: Formal
+mapping and iterative evolution of process models for scenario changes,'' \emph{Information}, vol.~16, no.~4,
+Art.~no.~323, 2025, doi: 10.3390/info16040323.
+\bibitem{wang} S. G. Wang, X. Guo, O. Karoui, M. C. Zhou, D. You, and A. Abusorrah, ``A refined siphon-based deadlock
+prevention policy for a class of Petri nets,'' \emph{IEEE Trans. Syst., Man, Cybern.: Syst.}, vol.~53, no.~1,
+pp.~191--203, 2023, doi: 10.1109/TSMC.2022.3174421.
 \bibitem{aalst} W. M. P. van der Aalst, ``The application of Petri nets to workflow management,''
 \emph{J. Circuits, Systems and Computers}, vol.~8, no.~1, pp.~21--66, 1998.
-\bibitem{dijkman} R. M. Dijkman, M. Dumas, and C. Ouyang, ``Semantics and analysis of business process models in
-BPMN,'' \emph{Information and Software Technology}, vol.~50, no.~12, pp.~1281--1294, 2008.
 \bibitem{murata} T. Murata, ``Petri nets: Properties, analysis and applications,'' \emph{Proc. IEEE}, vol.~77,
 no.~4, pp.~541--580, 1989.
-\bibitem{lizhou} Z. W. Li and M. C. Zhou, ``Elementary siphons of Petri nets and their application to deadlock
-prevention in flexible manufacturing systems,'' \emph{IEEE Trans. Syst., Man, Cybern. A}, vol.~34, no.~1,
-pp.~38--51, 2004.
-\bibitem{yamalidou} K. Yamalidou, J. Moody, M. Lemmon, and P. Antsaklis, ``Feedback control of Petri nets based on
-place invariants,'' \emph{Automatica}, vol.~32, no.~1, pp.~15--28, 1996.
 \bibitem{bpmn} Object Management Group, \emph{Business Process Model and Notation (BPMN), Version 2.0}, 2011.
 \bibitem{pm4py} A. Berti, S. J. van Zelst, and W. M. P. van der Aalst, ``Process Mining for Python (PM4Py):
 Bridging the gap between process- and data science,'' in \emph{Proc. ICPM Demo Track}, 2019, pp.~13--16.

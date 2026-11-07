@@ -1,8 +1,17 @@
-"""Step 3a - structural check on the BPMN graph (Awad and Puhlmann 2008).
+"""Step 3a - structural check on the BPMN graph.
 
-Instead of exploring every state, we look for known error patterns in the
-diagram itself.  This is fast and points straight at the faulty element,
-but it is not complete - the reachability analysis is the final proof.
+Kraeuter et al. (BPM 2024) list the typical causes of each soundness
+violation in a BPMN model (e.g. "a parallel gateway that synchronises flows
+that never all arrive" breaks option to complete; "an exclusive gateway that
+merges parallel flows" breaks safeness).  They find the cause after a
+counterexample is found; we also look for these causes directly in the
+diagram, before exploring any state.  This is fast and points straight at
+the faulty element, but it is not complete - the state-space analysis is the
+final proof.
+
+Patterns and the property they break:
+  P1, P2, P4 -> option to complete     P3 -> safeness / proper completion
+  P5 -> no dead activities             P6 -> resource deadlock (siphon, Wang et al. 2023)
 
 Patterns checked:
   P1  XOR/OR-split whose branches are closed by an AND-join      -> deadlock
