@@ -1,18 +1,4 @@
-"""Step 6 (extra) - timed simulation with branch probabilities (our extension).
-
-None of the three main papers we build on handles time; Zhang et al. (2025) name
-timed Petri nets as future work.  We add durations and branch probabilities.
-
-Each task transition has a duration ('time: 20' in the BPMN documentation)
-and each XOR branch a probability ('prob: 0.3').  We play many cases:
-
-  * all enabled transitions start at the current time; when several compete
-    for the same token (an XOR choice) one is drawn using the probabilities;
-  * a started transition takes its input tokens at once and gives its output
-    tokens when it finishes (now + duration) - so a resource stays busy
-    for the whole task;
-  * the case ends when nothing is enabled and nothing is running.
-"""
+"""Discrete-event timed simulation with branch probabilities."""
 import heapq
 import random
 import statistics
