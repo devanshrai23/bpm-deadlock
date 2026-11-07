@@ -1,4 +1,3 @@
-"""Place/transition Petri net data structure and firing rule."""
 from dataclasses import dataclass, field
 import copy
 import json
