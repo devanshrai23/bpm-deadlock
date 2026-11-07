@@ -70,11 +70,12 @@ a->b->c->d; d->g [label="no"]; d->e [label="yes"]; e->f; f->b [label="re-analyze
 dot(FRAME, "framework")
 
 # architecture diagram
-ARCH = """digraph A { rankdir=LR; node [shape=box, style="rounded,filled", fillcolor="white", fontname="Helvetica", fontsize=10];
+ARCH = """digraph A { rankdir=LR; node [shape=box, style="rounded,filled", fillcolor="white", fontname="Helvetica", fontsize=10]; edge [fontname="Helvetica", fontsize=9];
 in [label=".bpmn file\\n(Camunda Modeler)", fillcolor="#fef3c7"];
 p [label="bpmn_parser"]; t [label="transformer"]; n [label="petri_net"]; s [label="structural"];
 r [label="reachability"]; si [label="siphons"]; dg [label="diagnosis"]; pv [label="prevention"]; sm [label="simulate"];
+ev [label="evolution"];
 ui [label="Streamlit app\\n(app.py + visualize)", fillcolor="#dbeafe"];
-in->p->t->n; p->s; n->r->dg; n->si->dg; dg->pv; pv->t [label="fixed model"]; n->sm; s->ui; r->ui; dg->ui; pv->ui; sm->ui; }"""
+in->p->t->n; p->s; n->r->dg; n->si->dg; dg->pv; pv->t [label="fixed model"]; pv->ev; n->sm; s->ui; r->ui; dg->ui; pv->ui; ev->ui; sm->ui; }"""
 dot(ARCH, "architecture")
 print("figures in", FIG)
