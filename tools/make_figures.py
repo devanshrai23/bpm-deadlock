@@ -1,6 +1,4 @@
-"""Builds the results table (CSV) and the figures used in the report.
-Needs the Graphviz 'dot' program.  Run:  python tools/make_figures.py
-"""
+"""Generates result tables and report figures."""
 import subprocess
 import sys
 from pathlib import Path
