@@ -1,23 +1,4 @@
-"""Step 2 - map a BPMN model onto a Petri net (workflow net).
-
-Mapping rules (after the BPMN-to-Petri-net rules of Zhang et al., Information 2025,
-Table 2, without colours and hierarchy; a task is one transition, as in the
-pragmatic encoding of Kraeuter et al., BPM 2024):
-
-  BPMN element            Petri net pattern
-  ----------------------  ---------------------------------------------------
-  sequence flow           one place
-  start event             source place 'i' (1 token) + transition i -> out
-  end event               transition in -> sink place 'o'
-  task                    one transition  in -> out
-  AND gateway             one transition  (all inputs -> all outputs)
-  XOR split               one transition per outgoing branch
-  XOR join                one transition per incoming branch
-  OR split                one transition per non-empty subset of branches
-  resource                a place holding the free units (e.g. officer = 1)
-
-Initial marking M0 = i + free resources.  Final marking Mf = o + free resources.
-"""
+"""Transforms BPMN models into Petri nets (workflow nets)."""
 from itertools import combinations
 from .petri_net import PetriNet
 
