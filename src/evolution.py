@@ -1,15 +1,4 @@
-"""Step 6 - model evolution: what changed between two versions of a model.
-
-After Zhang et al. (Information 2025): a correction is an evolution of the
-process model made of atomic operations - insert, delete and replace - on its
-elements.  detect_changes() is their Algorithm 2 (BPMN change detection),
-comparing elements by id.  (We label the operations by their definitions in
-the paper's Section 4.4: a new id is an INSERT, a missing id a DELETE, and the
-same id with a different type, name or connection a REPLACE.)
-
-The report of operations tells the user which part of the model the fix
-touched, and the fixed model is then re-verified from step 2.
-"""
+"""BPMN model evolution and atomic change detection."""
 
 
 def _sig(model, eid):
