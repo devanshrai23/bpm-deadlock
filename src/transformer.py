@@ -1,6 +1,8 @@
 """Step 2 - map a BPMN model onto a Petri net (workflow net).
 
-Mapping rules (after Mutarraf et al. 2018 / Dijkman et al.):
+Mapping rules (after the BPMN-to-Petri-net rules of Zhang et al., Information 2025,
+Table 2, without colours and hierarchy; a task is one transition, as in the
+pragmatic encoding of Kraeuter et al., BPM 2024):
 
   BPMN element            Petri net pattern
   ----------------------  ---------------------------------------------------
@@ -143,3 +145,31 @@ def bpmn_to_petri(model):
             net.m0[p.id] = units
             net.mf[p.id] = units
     return net
+
+
+def check_mapping(model, net):
+    """Mapping-correctness check (Zhang et al. 2025, Algorithm 1).
+
+    1. element correspondence: every BPMN node has at least one transition and
+       every sequence flow has its place;
+    2. connectivity: for every flow src -> tgt, its place is an output of a
+       transition of src and an input of a transition of tgt.
+    Returns a list of error messages (empty = mapping is correct).
+    """
+    errors = []
+    by_node = {}
+    for t in net.transitions.values():
+        by_node.setdefault(t.bpmn_id, []).append(t.id)
+    for n in model.nodes.values():
+        if n.id not in by_node:
+            errors.append(f"BPMN element '{model.label(n.id)}' has no transition")
+    for f in model.flows.values():
+        p = "p_" + f.id
+        if p not in net.places:
+            errors.append(f"sequence flow {f.id} has no place")
+            continue
+        if not any(p in net.post[t] for t in by_node.get(f.src, [])):
+            errors.append(f"flow {f.id}: place not produced by '{model.label(f.src)}'")
+        if not any(p in net.pre[t] for t in by_node.get(f.tgt, [])):
+            errors.append(f"flow {f.id}: place not consumed by '{model.label(f.tgt)}'")
+    return errors

@@ -12,6 +12,8 @@ from src.petri_net import PetriNet
 from src.reachability import analyse, marking_text
 from src.simulate import run_cases
 from src.visualize import net_to_dot, graph_to_dot, bpmn_viewer_html
+from src.bpmn_parser import parse_bpmn
+from src.evolution import detect_changes, summary as change_summary
 
 MODELS = Path(__file__).parent / "models"
 st.set_page_config(page_title="BPM Deadlock Analyzer", layout="wide")
@@ -102,7 +104,7 @@ status_cols[0].metric("Reachable states", res["states"])
 status_cols[1].metric("Deadlocks", len(res["deadlocks"]))
 status_cols[2].metric("Improper ends", len(res["improper"]))
 status_cols[3].metric("Structural issues", len(out["issues"]))
-status_cols[4].metric("Sound", "yes ✅" if res["sound"] else "no ❌")
+status_cols[4].metric("Sound", {"sound": "yes ✅", "unsound": "no ❌"}.get(res["verdict"], "inconclusive ⚠️"))
 
 bad_nodes = sorted({n for i in out["issues"] for n in i["nodes"]} |
                    {n for c in out["causes"] for n in c["bpmn_nodes"]})
@@ -145,6 +147,10 @@ elif step.startswith("2"):
         st.dataframe(pd.DataFrame([{"id": x.id, "label": x.label, "BPMN element": x.bpmn_id,
                                     "inputs": ", ".join(net.pre[x.id]), "outputs": ", ".join(net.post[x.id])}
                                    for x in net.transitions.values()]), hide_index=True)
+    if out["mapping_errors"]:
+        st.error("Mapping check (Zhang et al., Alg. 1) failed:\n\n" + "\n".join("- " + e for e in out["mapping_errors"]))
+    else:
+        st.success("Mapping check (Zhang et al., Alg. 1): every BPMN element and connection is mapped.")
     st.download_button("Download Petri net (JSON)", net.to_json(), file_name=f"{name}_petri.json")
 
 # ---------------------------------------------------------------- step 3
@@ -152,22 +158,27 @@ elif step.startswith("3"):
     st.subheader("Step 3 · Deadlock detection")
     left, right = st.columns(2)
     with left:
-        st.markdown("#### a) Structural check (Awad & Puhlmann)")
+        st.markdown("#### a) Structural check (violation patterns)")
         if not out["issues"]:
             st.success("No structural deadlock pattern found.")
         for i in out["issues"]:
             box = st.error if i["severity"] == "deadlock" else st.warning
             box(f"**{i['code']} · {i['title']}**\n\n{i['message']}")
     with right:
-        st.markdown("#### b) Reachability analysis (Hu et al.)")
+        st.markdown("#### b) State-space analysis (Kräuter et al.)")
         st.write(f"Explored **{res['states']}** markings and **{res['edges']}** firings "
                  f"in {res['time_ms']:.1f} ms.")
         sound_tbl = pd.DataFrame([
             {"Soundness rule": "Option to complete (end always reachable)", "Holds": yn(res["option_to_complete"])},
             {"Soundness rule": "Proper completion (nothing left at the end)", "Holds": yn(res["proper_completion"])},
             {"Soundness rule": "No dead transitions", "Holds": yn(not res["dead_transitions"])},
+            {"Soundness rule": "Safeness (no flow holds two tokens)", "Holds": yn(res["safe"])},
         ])
         st.dataframe(sound_tbl, hide_index=True)
+        if res["truncated"]:
+            st.warning("State limit reached - the verdict is inconclusive, not unsound.")
+        if res["unsafe_flows"]:
+            st.caption("Unsafe flows: " + ", ".join(net.places[p].label for p in res["unsafe_flows"]))
         if res["dead_transitions"]:
             st.caption("Never fire: " + ", ".join(net.transitions[t].label for t in res["dead_transitions"]))
     if res["dead_markings"]:
@@ -225,6 +236,15 @@ elif step.startswith("4"):
                 {"": "After fix", "States": fr["states"], "Deadlocks": len(fr["deadlocks"]),
                  "Improper ends": len(fr["improper"]), "Sound": yn(fr["sound"])}])
             st.dataframe(comp, hide_index=True)
+            pm = fix.get("permissiveness")
+            if pm:
+                st.caption(f"Permissiveness (Wang et al.): the control places keep {pm['kept']} of "
+                           f"{pm['good_states']} good states" +
+                           (" - maximally permissive." if pm["maximally_permissive"] else "."))
+            for a in fix.get("alternatives", []):
+                st.info("Alternative quick fix: " + "; ".join(a["changes"]) +
+                        f" → {'sound' if a['result']['sound'] else 'unsound'}, {a['result']['states']} states "
+                        "(changes the business decision, so it is not applied by default).")
             st.graphviz_chart(net_to_dot(fix["net"]))
             if fix["xml"]:
                 st.download_button("Download fixed BPMN", fix["xml"], file_name=f"{name}_autofixed.bpmn")
@@ -235,6 +255,10 @@ elif step.startswith("4"):
             components.html(bpmn_viewer_html(read_model(other), 330), height=350)
             st.write(f"States: {fo['result']['states']} · Deadlocks: {len(fo['result']['deadlocks'])} · "
                      f"Sound: {fo['result']['sound']}")
+            ops = detect_changes(out["model"], fo["model"])
+            cs = change_summary(ops)
+            st.caption(f"Evolution operations (Zhang et al., Alg. 2): {cs['insert']} insert, "
+                       f"{cs['delete']} delete, {cs['replace']} replace.")
 
 # ---------------------------------------------------------------- token game
 elif step.startswith("5"):

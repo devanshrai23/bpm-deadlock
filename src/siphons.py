@@ -1,10 +1,16 @@
-"""Step 4 (resources) - siphons (Hu, Zhu and Lei 2011, section 2.3).
+"""Step 4 (resources) - siphons (definition as in Wang et al., IEEE TSMC 2023).
 
 A non-empty set of places S is a SIPHON if every transition that puts a
 token into S also takes a token from S       ( pre-set(S) is a subset of post-set(S) ).
 So once a siphon is empty it can never get a token again, and every
 transition that needs one of its places is dead for ever.  An empty siphon
 is the classic signature of a resource (circular-wait) deadlock.
+
+Wang et al. find the emptiable siphons with mixed-integer programming, so that
+neither all siphons nor the reachability graph are needed.  Our nets are small,
+so we enumerate minimal siphons and keep those that are empty in a dead marking
+found by the state-space analysis.  Replacing this step with their MIP is
+future work for large models.
 """
 
 

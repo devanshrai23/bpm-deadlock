@@ -1,0 +1,9 @@
+branches length our states   paper time (ms)  verdict
+       5      1         36      35         0  sound
+      10      1       1028    1027        29  sound
+      15      1      20000   32771       944  inconclusive
+      16      1      20000   65539      1029  inconclusive
+       5      3       1028    1027        25  sound
+       5      5       7780    7779       178  sound
+       3     10       1335    1334        26  sound
+       3     20       9265    9264       259  sound
