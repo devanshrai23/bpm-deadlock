@@ -1,26 +1,4 @@
-"""Step 3a - structural check on the BPMN graph.
-
-Kraeuter et al. (BPM 2024) list the typical causes of each soundness
-violation in a BPMN model (e.g. "a parallel gateway that synchronises flows
-that never all arrive" breaks option to complete; "an exclusive gateway that
-merges parallel flows" breaks safeness).  They find the cause after a
-counterexample is found; we also look for these causes directly in the
-diagram, before exploring any state.  This is fast and points straight at
-the faulty element, but it is not complete - the state-space analysis is the
-final proof.
-
-Patterns and the property they break:
-  P1, P2, P4 -> option to complete     P3 -> safeness / proper completion
-  P5 -> no dead activities             P6 -> resource deadlock (siphon, Wang et al. 2023)
-
-Patterns checked:
-  P1  XOR/OR-split whose branches are closed by an AND-join      -> deadlock
-  P2  AND-join used as the entry of a loop                        -> deadlock
-  P3  AND-split whose branches are closed by an XOR-join          -> lack of synchronisation
-  P4  element with no outgoing flow (not an end event)            -> dead end
-  P5  element not reachable from the start event                  -> dead element
-  P6  two resources taken in opposite order on different paths    -> circular wait
-"""
+"""Structural analysis for known BPMN error patterns (P1–P6)."""
 
 
 def _forward(model, start_flow, stop_nodes):
