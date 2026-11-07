@@ -1,13 +1,4 @@
-"""Drawing helpers.
-
-  * net_to_dot      : Petri net as Graphviz DOT text (circles = places,
-                      boxes = transitions, dots = tokens). Problem parts in red.
-  * graph_to_dot    : reachability graph, dead markings in red, final in green.
-  * bpmn_viewer_html: HTML page that draws the BPMN diagram with bpmn-js.
-
-Streamlit draws DOT text in the browser (st.graphviz_chart), so no Graphviz
-install is needed to run the app.
-"""
+"""Visualization utilities for Petri nets and BPMN diagrams."""
 import json
 from pathlib import Path
 from .reachability import key, marking_text
