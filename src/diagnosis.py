@@ -1,11 +1,4 @@
-"""Step 4 - explain WHY a dead marking is stuck.
-
-For a dead marking we list
-  * where the tokens are (what has already happened), and
-  * which transitions are waiting, and for which empty input place.
-We then map those transitions back to BPMN elements so the user sees the
-faulty gateway / task in the diagram.
-"""
+"""Deadlock diagnosis and root cause explanation for dead markings."""
 from .reachability import marking_text
 
 
