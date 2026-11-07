@@ -1,4 +1,3 @@
-"""Visualization utilities for Petri nets and BPMN diagrams."""
 import json
 from pathlib import Path
 from .reachability import key, marking_text
@@ -79,7 +78,6 @@ STATIC = Path(__file__).resolve().parent.parent / "static"
 
 
 def bpmn_viewer_html(xml_text, height=420, highlight=()):
-    """bpmn-js viewer (bundled in static/, works offline). Faulty elements get a red outline."""
     js = (STATIC / "bpmn-navigated-viewer.production.min.js").read_text(encoding="utf-8")
     css = (STATIC / "bpmn-viewer.css").read_text(encoding="utf-8")
     return f"""
