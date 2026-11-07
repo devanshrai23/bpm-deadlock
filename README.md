@@ -13,8 +13,6 @@ get stuck, explains why, repairs the model, and checks the repaired version agai
 
 **Live demo:** https://bpm-deadlock.streamlit.app/
 
-![Deadlock detection page](results/screens/3_detect.png)
-
 ---
 
 ## Contents
@@ -200,18 +198,6 @@ python tools/make_figures.py         # report figures (needs Graphviz installed)
 The report compiles with any LaTeX distribution that has the IEEEtran class. On Overleaf, upload
 `report/report_overleaf.zip` as a new project.
 
-## Deployment
-
-The app is ready for [Streamlit Community Cloud](https://streamlit.io/cloud):
-
-1. Sign in with GitHub and choose **Create app → Deploy a public app from GitHub**.
-2. Repository `devanshrai23/bpm-deadlock`, branch `main`, main file `app.py`.
-3. Under **Advanced settings**, choose Python 3.12.
-4. Deploy. The first build takes a few minutes.
-
-`requirements.txt` holds only what the app needs (Streamlit, pinned to the tested version, and
-pandas). Testing and figure tools are in `requirements-dev.txt`, so they don't slow down the build.
-
 ## References
 
 1. T. Kräuter, P. Stünkel, A. Rutle, H. König, Y. Lamo. *Instantaneous, Comprehensible, and Fixable
@@ -221,9 +207,3 @@ pandas). Testing and figure tools are in `requirements-dev.txt`, so they don't s
 3. S. G. Wang, X. Guo, O. Karoui, M. C. Zhou, D. You, A. Abusorrah. *A Refined Siphon-Based Deadlock
    Prevention Policy for a Class of Petri Nets.* IEEE Trans. Syst., Man, Cybern.: Systems
    53(1):191–203, 2023.
-4. W. M. P. van der Aalst. *The Application of Petri Nets to Workflow Management.* J. Circuits,
-   Systems and Computers 8(1):21–66, 1998.
-5. T. Murata. *Petri Nets: Properties, Analysis and Applications.* Proc. IEEE 77(4):541–580, 1989.
-
-The BPMN diagrams are drawn with [bpmn-js](https://github.com/bpmn-io/bpmn-js), included under its own
-license (`static/BPMN-JS-LICENSE.txt`).

@@ -5,7 +5,6 @@ import time
 MAX_STATES = 20000
 UNBOUNDED_LIMIT = 50   # tokens in one place above this -> treat as unbounded
 
-
 def key(m):
     """A marking as a hashable, sorted tuple (zero places left out)."""
     return tuple(sorted((p, n) for p, n in m.items() if n))

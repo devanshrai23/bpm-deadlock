@@ -1,14 +1,11 @@
 def preset(net, S):
     return {t for t in net.transitions if any(p in S for p in net.post[t])}
 
-
 def postset(net, S):
     return {t for t in net.transitions if any(p in S for p in net.pre[t])}
 
-
 def is_siphon(net, S):
     return bool(S) and preset(net, S) <= postset(net, S)
-
 
 def minimal_siphons(net, exclude=("i",), limit=200):
     exclude = set(exclude)

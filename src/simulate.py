@@ -2,7 +2,6 @@ import heapq
 import random
 import statistics
 
-
 def run_case(net, rng, max_steps=5000):
     m = {p: n for p, n in net.m0.items() if n}
     now, running, steps, fired = 0.0, [], 0, []

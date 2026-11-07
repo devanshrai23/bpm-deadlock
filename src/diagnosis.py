@@ -1,6 +1,5 @@
 from .reachability import marking_text
 
-
 def explain(net, dead):
     m = dead["marking"]
     waiting = []
