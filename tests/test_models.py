@@ -23,6 +23,9 @@ EXPECTED = {
     "D3_leave_request":     (False, 0, {"P3"}, True),
     "D4_hospital_admission": (False, 1, {"P6"}, True),
     "D5_purchase_order_loop": (False, 1, {"P2"}, True),
+    # complex case: the automatic fixes leave the P4 dead end, which needs a manual redesign
+    "C1_complex":           (False, 3, {"P1", "P2", "P3", "P4", "P6"}, False),
+    "C1_fixed":             (True, 0, set(), None),
 }
 
 
@@ -69,7 +72,7 @@ def test_mapping_correct(name):
 def test_safeness(name):
     """Kraeuter et al. 2024: only D3 (AND-split closed by XOR-join) is unsafe."""
     r = run_pipeline((MODELS / f"{name}.bpmn").read_text())["result"]
-    assert r["safe"] == (name != "D3_leave_request")
+    assert r["safe"] == (name != "D3_leave_request")   # C1's P3 is hidden until round 1
 
 
 @pytest.mark.parametrize("name", ["M5_resource_deadlock", "D4_hospital_admission"])
@@ -98,3 +101,13 @@ def test_truncated_is_inconclusive():
     from tools.benchmark_parallel import parallel_model
     r = analyse(bpmn_to_petri(parse_bpmn(parallel_model(15, 1))))
     assert r["truncated"] and r["verdict"] == "inconclusive"
+
+
+def test_complex_case_rounds():
+    """C1 is repaired round by round; each round removes deadlocks and the last one is sound."""
+    from tools.complex_case import rounds
+    rows, d = rounds()
+    assert [r["Deadlocks"] for r in rows] == [3, 2, 1, 0, 0]
+    assert [r["Sound"] for r in rows] == ["no", "no", "no", "yes", "yes"]
+    assert rows[0]["Dead transitions"] > 0          # defects hidden behind the first ones
+    assert d["round3"][3]["maximally_permissive"]   # the control place keeps every good state

@@ -20,7 +20,7 @@ FIG = OUT / "figures"
 FIG.mkdir(parents=True, exist_ok=True)
 ORDER = ["M1_sequential", "M2_parallel", "M3_wrong_join", "M3_fixed", "M4_missing_recovery", "M4_fixed",
          "M5_resource_deadlock", "M5_fixed", "M6_full_timed", "D1_order_fulfilment", "D2_insurance_claim",
-         "D3_leave_request", "D4_hospital_admission", "D5_purchase_order_loop"]
+         "D3_leave_request", "D4_hospital_admission", "D5_purchase_order_loop", "C1_complex", "C1_fixed"]
 
 
 def dot(src, name, extra=()):

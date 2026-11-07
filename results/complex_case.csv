@@ -1,0 +1,6 @@
+Round,Action,Places,Transitions,States,Deadlocks,Improper ends,Dead transitions,Safe,Sound,Structural issues,Mapping errors
+0,Original model (five defects),40,36,32,3,0,23,yes,no,"P1, P2, P3, P4, P6",0
+1,"Quick fixes: risk join and loop entry AND -> XOR (P1, P2); notification merge XOR -> AND (P3)",40,37,217,2,0,0,yes,no,"P4, P6",0
+2,Redesign P4: Refer to manager -> Manager decision -> outcome merge,41,39,218,1,0,0,yes,no,P6,0
+3,"Control place V1 for siphon {p_f10, p_f5, r_credit_system, r_officer}",42,39,212,0,0,0,yes,yes,-,-
+final,C1_fixed: all five repaired in BPMN (same resource order on both branches),41,39,212,0,0,0,yes,yes,,0
