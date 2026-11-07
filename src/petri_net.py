@@ -1,12 +1,4 @@
-"""Step 2 (data structure) - a place/transition Petri net.
-
-A Petri net N = (P, T, F) with weights, an initial marking M0 and a final
-marking Mf.  A marking is a dict {place_id: number_of_tokens}.
-
-Firing rule:
-  * t is enabled in M   if every input place p has M[p] >= pre[t][p]
-  * firing t gives M'   = M - pre[t] + post[t]
-"""
+"""Place/transition Petri net data structure and firing rule."""
 from dataclasses import dataclass, field
 import copy
 import json
