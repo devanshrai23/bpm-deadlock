@@ -1,9 +1,7 @@
-"""Deadlock diagnosis and root cause explanation for dead markings."""
 from .reachability import marking_text
 
 
 def explain(net, dead):
-    """dead = one entry of analyse(net)['dead_markings']"""
     m = dead["marking"]
     waiting = []
     for p, n in m.items():
