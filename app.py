@@ -73,7 +73,8 @@ def analyse_model(xml):
 @st.cache_data(show_spinner="Simulating cases...", max_entries=20)
 def simulate(xml, use_fixed_net, n_cases):
     out = analyse_model(xml)
-    net = out["fix"]["net"] if use_fixed_net else out["net"]
+    fix = out.get("fix")
+    net = (fix["net"] if (use_fixed_net and fix and fix.get("net")) else out["net"])
     return run_cases(net, n_cases)
 
 
@@ -512,4 +513,5 @@ def main():
     PAGE_FUNCS[page](name, xml, out)
 
 
-main()
+if __name__ == "__main__":
+    main()
