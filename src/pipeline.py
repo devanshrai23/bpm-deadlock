@@ -1,7 +1,4 @@
-"""Runs the whole 6-step framework on one BPMN model.
-
-  1 model   -> 2 Petri net -> 3 detect -> 4 find cause -> 5 fix -> 6 re-check
-"""
+"""End-to-end analysis and correction pipeline for BPMN models."""
 from .bpmn_parser import parse_bpmn
 from .transformer import bpmn_to_petri, check_mapping
 from .structural import check
