@@ -1,10 +1,4 @@
-"""Cross-checks our soundness result against pm4py (WOFLAN soundness check).
-
-pm4py reads the control flow only - it ignores our resource annotations - so
-for the resource models (M5, D4) we compare against our analysis with the
-resource places removed.
-Run:  python tools/crosscheck_pm4py.py
-"""
+"""Cross-checks soundness results against pm4py WOFLAN."""
 import sys
 import warnings
 from pathlib import Path
