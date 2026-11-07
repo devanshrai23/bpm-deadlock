@@ -11,7 +11,7 @@ never started, a loop that can't be entered, two tasks each holding the resource
 This tool reads a BPMN 2.0 model, translates it into a Petri net, finds every state where a case can
 get stuck, explains why, repairs the model, and checks the repaired version again.
 
-**Live demo:** https://bpm-deadlock.streamlit.app/ (see [Deployment](#deployment))_
+**Live demo:** https://bpm-deadlock.streamlit.app/
 
 Course project for Business Process Management, IIIT Allahabad.
 
