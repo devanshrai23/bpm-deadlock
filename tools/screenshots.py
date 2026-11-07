@@ -1,7 +1,4 @@
-"""Takes screenshots of every app step (used for the report).
-Start the app first (streamlit run app.py), then:  python tools/screenshots.py results/screens
-Needs the Python Playwright package (pip install playwright && playwright install chromium).
-"""
+"""Takes screenshots of app pages using Playwright."""
 import sys
 import time
 from playwright.sync_api import sync_playwright
