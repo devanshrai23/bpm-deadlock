@@ -1,4 +1,3 @@
-"""End-to-end analysis and correction pipeline for BPMN models."""
 from .bpmn_parser import parse_bpmn
 from .transformer import bpmn_to_petri, check_mapping
 from .structural import check
