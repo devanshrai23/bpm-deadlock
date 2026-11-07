@@ -1,4 +1,3 @@
-"""Deadlock prevention and correction rules for gateways and resources."""
 import xml.etree.ElementTree as ET
 from .bpmn_parser import NS
 from .siphons import tokens_in
