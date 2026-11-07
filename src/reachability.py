@@ -1,29 +1,4 @@
-"""Step 3b - state-space (reachability) analysis.
-
-Following Kraeuter et al. (BPM 2024) we explore the whole state space with a
-breadth-first search and check every property on the way.  Like their
-"pragmatic encoding", a task is ONE transition (no separate start/end), which
-keeps the state space small: for n parallel branches of length m we get
-(m+1)^n + 4 states, against (m+1)^n + 3 in their Rust tool.
-
-A marking M is DEAD if no transition is enabled in it.
-  * dead and M == Mf                -> normal completion
-  * dead, sink 'o' empty            -> DEADLOCK (the case is stuck)
-  * dead, sink 'o' marked, M != Mf  -> IMPROPER COMPLETION (tokens left behind)
-
-Soundness of a workflow net (van der Aalst) is also checked:
-  1. option to complete : Mf can be reached from every reachable marking
-  2. proper completion  : no reachable marking puts a token in 'o' with others left over
-  3. no dead transitions: every transition fires in at least one run
-
-Safeness (Kraeuter et al.) is checked as well: no sequence flow may ever hold
-two tokens.  An unsafe flow points at a missing synchronisation (e.g. an
-AND-split closed by an XOR-join).  It is reported separately and does not
-change the soundness verdict.
-
-If the search hits MAX_STATES (or a place exceeds UNBOUNDED_LIMIT) the verdict
-is "inconclusive", not "unsound": the part we did not explore may be fine.
-"""
+"""Reachability graph construction and soundness analysis."""
 from collections import deque
 from dataclasses import dataclass, field
 import time
