@@ -1,8 +1,4 @@
-"""Structural analysis for known BPMN error patterns (P1–P6)."""
-
-
 def _forward(model, start_flow, stop_nodes):
-    """Flow ids reachable from start_flow without passing through stop_nodes."""
     seen, stack = set(), [start_flow]
     while stack:
         fid = stack.pop()
@@ -86,7 +82,6 @@ def _unreachable(model):
 
 
 def _resource_order(model):
-    """Walk every path carrying the set of held resources; record 'held A, then took B'."""
     def res(n, k):
         return [r.strip() for r in n.doc.get(k, "").split(",") if r.strip()]
 
@@ -124,7 +119,6 @@ def _resource_order(model):
 
 
 def check(model):
-    """Return a list of structural issues found in the BPMN model."""
     issues = []
     issues += _split_join_mismatch(
         model, ("xor", "or"), "and", "P1", "deadlock", "XOR-split closed by AND-join",
