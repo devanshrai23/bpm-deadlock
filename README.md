@@ -13,8 +13,6 @@ get stuck, explains why, repairs the model, and checks the repaired version agai
 
 **Live demo:** https://bpm-deadlock.streamlit.app/
 
-Course project for Business Process Management, IIIT Allahabad.
-
 ![Deadlock detection page](results/screens/3_detect.png)
 
 ---
@@ -229,13 +227,3 @@ pandas). Testing and figure tools are in `requirements-dev.txt`, so they don't s
 
 The BPMN diagrams are drawn with [bpmn-js](https://github.com/bpmn-io/bpmn-js), included under its own
 license (`static/BPMN-JS-LICENSE.txt`).
-
-## Team
-
-| Name | Roll number |
-|---|---|
-| Devansh Rai | IIB2024006 |
-| Geethika Gorakala | IIB2024024 |
-| Abhilasha Sharma | IIB2024501 |
-
-Indian Institute of Information Technology Allahabad
