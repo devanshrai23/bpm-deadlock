@@ -1,7 +1,4 @@
-"""BPMN Deadlock Analyzer - Streamlit front end.
-
-Run locally with:  streamlit run app.py
-"""
+"""BPMN Deadlock Analyzer web interface."""
 from pathlib import Path
 
 import pandas as pd
