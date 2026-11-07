@@ -1,6 +1,3 @@
-"""BPMN model evolution and atomic change detection."""
-
-
 def _sig(model, eid):
     if eid in model.nodes:
         n = model.nodes[eid]
@@ -10,7 +7,6 @@ def _sig(model, eid):
 
 
 def detect_changes(old, new):
-    """List of {op, element, kind, before, after} from model `old` to model `new`."""
     old_ids = set(old.nodes) | set(old.flows)
     new_ids = set(new.nodes) | set(new.flows)
     ops = []
@@ -26,7 +22,6 @@ def detect_changes(old, new):
 
 
 def summary(ops):
-    """e.g. {'insert': 9, 'delete': 1, 'replace': 2}"""
     out = {"insert": 0, "delete": 0, "replace": 0}
     for o in ops:
         out[o["op"]] += 1
