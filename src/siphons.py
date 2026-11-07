@@ -1,6 +1,3 @@
-"""Computation of minimal and problem siphons in Petri nets."""
-
-
 def preset(net, S):
     return {t for t in net.transitions if any(p in S for p in net.post[t])}
 
@@ -14,13 +11,6 @@ def is_siphon(net, S):
 
 
 def minimal_siphons(net, exclude=("i",), limit=200):
-    """Find minimal siphons by growing a set place by place.
-
-    Starting from one place, while some transition t feeds S without taking
-    from S, we must add one of t's input places (one branch per choice).
-    Siphons that would need an excluded place (the source 'i', which empties
-    by design in every workflow net) are skipped.
-    """
     exclude = set(exclude)
     found = []
 
@@ -48,7 +38,6 @@ def tokens_in(m, S):
 
 
 def problem_siphons(net, dead_markings):
-    """Minimal siphons that start marked but are empty in some dead marking."""
     out = []
     for S in minimal_siphons(net):
         if tokens_in(net.m0, S) == 0:
