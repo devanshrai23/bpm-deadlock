@@ -1,11 +1,4 @@
-"""Generates the BPMN 2.0 XML files (with diagram layout) for all models.
-
-Each model is written as a compact spec: nodes placed on a grid (column, row)
-and sequence flows between them.  The script turns the spec into a .bpmn file
-that opens in Camunda Modeler or https://demo.bpmn.io.
-
-Run:  python tools/generate_models.py
-"""
+"""Generates BPMN 2.0 XML files with diagram layout."""
 from pathlib import Path
 from xml.sax.saxutils import escape
 
