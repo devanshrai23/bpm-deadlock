@@ -1,9 +1,4 @@
-"""Parallel-branch benchmark of Kraeuter et al. (BPM 2024, Fig. 4 / Table 1).
-
-A start event, an AND-split into n branches of m tasks each, an AND-join and an
-end event.  The state space grows as (m+1)^n, the worst case for state-space
-exploration.  Run:  python tools/benchmark_parallel.py
-"""
+"""Benchmark for parallel branches state-space growth."""
 import sys
 import time
 from pathlib import Path
