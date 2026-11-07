@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pandas as pd
 import streamlit as st
-import streamlit.components.v1 as components
 
 from src.evolution import detect_changes, summary as change_summary
 from src.petri_net import PetriNet
@@ -95,7 +94,7 @@ def verdict_text(res):
 
 
 def show_bpmn(xml, height=440, highlight=()):
-    components.html(bpmn_viewer_html(xml, height - 20, list(highlight)), height=height)
+    st.components.v1.html(bpmn_viewer_html(xml, height - 20, list(highlight)), height=height)
 
 
 def trace_text(net, trace):
