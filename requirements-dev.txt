@@ -1,0 +1,5 @@
+# Tests, figure scripts and the pm4py cross-check
+-r requirements.txt
+pytest>=7.0
+matplotlib>=3.7
+pm4py>=2.7

@@ -39,10 +39,12 @@ by looking at a diagram. We present a six-step framework and a Python tool that 
 (2) maps it to a workflow Petri net, (3) detects deadlocks with a fast structural pattern check and an exhaustive
 state-space analysis of soundness and safeness, (4) explains the cause with a witness trace and siphon analysis,
 (5) applies a quick fix or a siphon-control place, and (6) re-verifies the corrected model for soundness. We apply it to a Loan Approval process built up in
-six models of increasing complexity, plus five models from other domains. Of the 14 models, 7 are unsound:
-four deadlock through control-flow errors, two through circular waits on shared resources, and one completes improperly. Every one
-of them is corrected and re-verified as sound, and every analysis finishes in under 2~ms. Our soundness verdicts match the
-independent pm4py/WOFLAN checker on all 14 models, the siphon-control places keep every good state (maximally
+six models of increasing complexity, a complex end-to-end model with five defects, and five models from other
+domains. Of the 16 models, 8 are unsound: four deadlock through control-flow errors, two through circular waits on
+shared resources, one completes improperly, and the complex model combines all three kinds. Its defects hide each other,
+so it is repaired in three detect--fix--re-analyse rounds. Every unsound model is corrected and re-verified as sound,
+and every analysis finishes in under 5~ms. Our soundness verdicts match the independent pm4py/WOFLAN checker on all
+16 models, the siphon-control places keep every good state (maximally
 permissive), and on the parallel-branch benchmark of Kr\"auter et al.\ our state spaces match theirs to within one
 state. A timed simulation of the final model with branch
 probabilities completes 100\% of 1000 cases with a mean cycle time of 62.4 minutes.
@@ -72,8 +74,9 @@ diagnosis, correction and re-verification; (ii) a Python implementation with a S
 combines the soundness and safeness checking and quick fixes of Kr\"auter et al.~\cite{kraeuter}, the BPMN-to-Petri-net
 mapping, mapping check and evolution operations of Zhang et al.~\cite{zhang}, and the siphon-based deadlock
 prevention of Wang et al.~\cite{wang}, extended with shared resources, time and probabilities; (iii) a Loan
-Approval case study of six models, from a simple sequence to a timed model with shared resources, with
-before/after results and a scalability benchmark.
+Approval case study of six models, from a simple sequence to a timed model with shared resources, and a complex
+end-to-end model with five interacting defects that is repaired round by round, with before/after results and a
+scalability benchmark.
 
 \section{Related Work}
 \textbf{Soundness checking of BPMN.} Kr\"auter et al.~\cite{kraeuter} present a BPMN soundness checker that is
@@ -282,8 +285,8 @@ Module & What it does \\
 \end{tabular}
 \end{table}
 
-\textbf{Input (dataset).} The dataset is a set of 14 BPMN~2.0 XML process models: nine Loan Approval models
-(M1--M6 and three fixed versions) and five demonstration models from other domains. The tool also accepts a Petri net
+\textbf{Input (dataset).} The dataset is a set of 16 BPMN~2.0 XML process models: eleven Loan Approval models
+(M1--M6, the complex model C1, and four fixed versions) and five demonstration models from other domains. The tool also accepts a Petri net
 as JSON (places, transitions, arcs, initial and final marking).
 
 \textbf{Output.} The Petri net and reachability graph with dead states in red; dead markings with witness
@@ -324,7 +327,7 @@ single credit-system session, and they take them in opposite orders.
 \end{figure*}
 
 \subsection{Detection and correction results}
-Table~\ref{tab:res} summarises all 14 models.
+Table~\ref{tab:res} summarises the results (fixed versions appear in the last two columns).
 
 \begin{table*}[t]
 \caption{Analysis results before and after correction (S = reachable states, D = deadlocks, I = improper completions)}
@@ -341,6 +344,7 @@ M3 wrong join        & 12 & 11 & 8  & 2 & 0 & no  & P1  & AND-join $\to$ XOR-joi
 M4 missing recovery  & 14 & 12 & 17 & 1 & 0 & no  & P4  & redesign (M4-fixed)                 & yes & 32 \\
 M5 resource deadlock & 17 & 13 & 20 & 1 & 0 & no  & P6  & control place $V_1$ / fixed order   & yes & 19 / 19 \\
 M6 full timed        & 30 & 31 & 82 & 0 & 0 & yes & --  & --                                  & --  & -- \\
+C1 complex           & 40 & 36 & 32 & 3 & 0 & no  & P1--P4, P6 & 3 rounds (Table~\ref{tab:c1})  & yes & 212 \\
 \midrule
 D1 order fulfilment  & 13 & 12 & 13 & 0 & 0 & yes & --  & --                                  & --  & -- \\
 D2 insurance claim   & 10 & 9  & 7  & 2 & 0 & no  & P1  & AND-join $\to$ XOR-join             & yes & 10 \\
@@ -403,10 +407,83 @@ all their arcs have weight~1.
 \textbf{Evolution operations.} The change detection of~\cite{zhang} describes each hand correction: M3$\to$M3-fixed is
 a single \emph{replace} (the join's type), M5$\to$M5-fixed is three \emph{replace} operations (the fraud branch's
 flows re-ordered), and the M4 redesign consists of 20 \emph{insert}, 1 \emph{delete} and 7 \emph{replace} operations.
-The mapping check of~\cite{zhang} reports no error for any of the 14 models.
+The mapping check of~\cite{zhang} reports no error for any of the 16 models.
 
 \textbf{Cross-check.} pm4py's WOFLAN check~\cite{pm4py} reads the control flow only. On the control flow of all
-14 models, its soundness verdict matches ours. All our analyses take under 2~ms per model.
+16 models, its soundness verdict matches ours. All our analyses take under 5~ms per model.
+
+\subsection{Complex model with multiple deadlocks}
+\textbf{The model.} C1 (Fig.~\ref{fig:c1}) is an end-to-end loan process with 30 BPMN elements and two shared
+resources (one loan officer, one credit-system session). After the application is received, an AND-split starts three
+branches: a credit branch that opens the credit system, assigns the officer, assesses the application and routes it by
+risk level; a fraud branch that also needs both resources; and a document branch with a resubmission loop. After the
+decision the case is approved, rejected or referred to a manager, and the applicant is notified by e-mail and SMS in
+parallel before the case is archived. We built in five defects, one of each kind our framework handles:
+(1)~the ``Risk level?'' XOR-split is closed by an AND-join (P1); (2)~the document loop is entered through an AND-join
+(P2); (3)~the fraud branch takes the officer first and then the credit system, the opposite order to the credit
+branch (P6); (4)~``Refer to manager'' has no outgoing flow (P4); and (5)~the parallel notifications are merged by an
+XOR-join (P3).
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{bpmn_C1_complex.png}
+\caption{C1: complex loan process with five defects. The elements named by the structural check are outlined in red.}
+\label{fig:c1}
+\end{figure*}
+
+\textbf{Steps 2--4.} The Petri net has 40 places and 36 transitions, and the mapping check finds no error. The
+structural check reports all five patterns at once. The state-space analysis finds only 32 states and 3 deadlocks:
+the circular wait between the credit and fraud branches, and two markings (one per risk level) in which the risk
+AND-join waits for the branch that was not chosen. In all three, a token stays in front of the loop-entry AND-join,
+so the document branch never starts
+(Fig.~\ref{fig:c1pn}). Every run stops before the decision. The dead end and the notification merge are never reached,
+and 23 of the 36 transitions are dead. \emph{The first defects hide the later ones}, which is why the framework
+re-analyses after every fix. The structural check still sees the hidden defects, because it does not depend on
+reachability.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{pn_C1_complex_dead_part.png}
+\caption{Petri net of C1 up to the main AND-join (the part after it is never reached) in its first dead marking.
+Red: the token stuck before the loop-entry AND-join, the two branches each holding one resource, and the transitions
+waiting for the other resource or for the loop-back token.}
+\label{fig:c1pn}
+\end{figure*}
+
+\textbf{Steps 5--6, round by round.} Table~\ref{tab:c1} shows each round.
+In round~1 the three gateway quick fixes are applied (risk join and loop entry to XOR-joins, notification merge to an
+AND-join). Now every branch can finish, the state space grows to 217 states, no transition is dead, and the analysis
+reveals a deadlock that was hidden before: the trace \emph{\ldots\ Outcome?: Refer $\to$ Refer to manager} ends with a
+token in the dead-end place. The circular wait remains. In round~2 this dead end is redesigned by hand: a ``Manager
+decision'' task leads the referred case back to the outcome merge. Only the circular wait is left. In round~3 the
+siphon $S=\{r_{officer}, r_{credit}, p_5, p_{10}\}$ is controlled by a place $V_1$ with one token, taken by the first
+resource request of each branch (``Open credit system'', ``Assign officer (fraud)'') and returned by ``Credit
+assessment'' and ``Fraud check''. The net becomes sound with 212 states. $V_1$ keeps all 212 good states of the
+round-2 net, so it is maximally permissive~\cite{wang}.
+
+As a BPMN-level alternative to the control place, C1-fixed takes the credit system first on both branches. It is
+sound with the same 212 states and is confirmed by pm4py. The change detection of~\cite{zhang} describes the full
+repair from C1 to C1-fixed as 3 \emph{insert} operations (the manager-decision task and its two flows) and 6
+\emph{replace} operations (three gateway types and the three re-ordered flows of the fraud branch).
+
+\begin{table}[t]
+\caption{Round-by-round repair of C1 (S = states, D = deadlocks, DT = dead transitions)}
+\label{tab:c1}
+\centering
+\footnotesize
+\begin{tabular}{@{}lp{0.43\columnwidth}rrrc@{}}
+\toprule
+Round & Fix applied & S & D & DT & Sound \\
+\midrule
+0 & none (five defects) & 32 & 3 & 23 & no \\
+1 & quick fixes P1, P2, P3 & 217 & 2 & 0 & no \\
+2 & redesign of dead end P4 & 218 & 1 & 0 & no \\
+3 & control place $V_1$ for P6 & 212 & 0 & 0 & yes \\
+\midrule
+-- & C1-fixed (BPMN-level repair) & 212 & 0 & 0 & yes \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsection{Scalability}
 To compare with~\cite{kraeuter}, we generated their worst-case benchmark: an AND-split into $n$ branches of $m$ tasks
@@ -451,13 +528,18 @@ branches start at the same moment, every simulated case deadlocks. With the cont
 The two detection methods complement each other. The structural check is instant and names the faulty gateways,
 but it is a heuristic: it can miss errors and, in unusual structures, raise false alarms. The state-space analysis is
 complete and gives a concrete witness trace, but the number of states can grow exponentially with concurrency (state
-explosion), as the benchmark shows. Our largest case-study model has 82 states, far below the limit. For much larger
+explosion), as the benchmark shows. Our largest case-study net (C1 after round~2) has 218 states, far below the limit. For much larger
 models, partial-order reduction~\cite{kraeuter}, hierarchical decomposition into modules~\cite{zhang}, or finding
 problem siphons by mixed-integer programming instead of from the state space~\cite{wang} would be needed.
 
 The corrections preserve correct behaviour. A gateway fix only removes runs that ended in a deadlock, and every
 run that completed before still completes. The siphon control place only delays one branch until the other
 releases its resources, so no activity is removed, and the permissiveness check confirms that no good state is lost.
+
+The complex model shows why both detection methods and the re-analysis loop are needed. With several defects, the
+state space shows only the defects that a run reaches first; the others are hidden behind dead transitions. The
+structural check names all of them at once, the quick fixes remove the first layer, and each re-analysis then reveals
+the next defect with a concrete witness trace.
 
 \textbf{Limitations.} OR-joins are approximated as XOR-joins. Sub-processes, pools, boundary events and message
 flows are not translated (the hierarchical mapping of~\cite{zhang} covers sub-processes and message flows). Each
@@ -467,8 +549,8 @@ recovery redesign for P4 cannot be automated, because it is a business decision.
 
 \section{Conclusion and Future Work}
 We showed that Petri nets give a practical way to detect, explain and prevent deadlocks in BPMN models. Combining
-pattern-based structural checks with state-space and siphon analysis found every injected error in our 14 models,
-identified its cause, and confirmed each correction as sound, with control places that are maximally permissive.
+pattern-based structural checks with state-space and siphon analysis found every injected error in our 16 models,
+including five interacting defects in one complex model, identified its cause, and confirmed each correction as sound, with control places that are maximally permissive.
 Future work follows the three papers we build on: MIP-based siphon detection~\cite{wang} for large nets; coloured
 tokens for several concurrent cases and hierarchical sub-processes~\cite{zhang}, so that resource conflicts between
 loan applications can be analysed; and replaying counterexamples on the BPMN diagram itself~\cite{kraeuter}. Further
