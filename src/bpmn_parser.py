@@ -1,13 +1,4 @@
-"""Step 1 - read a BPMN 2.0 XML file into a simple Python model.
-
-Input : the text of a .bpmn file (as exported by Camunda Modeler / bpmn.io)
-Output: a BpmnModel with nodes (events, tasks, gateways) and sequence flows.
-
-Extra information is read from the standard <documentation> field:
-  * process : "resources: officer=1, credit_system=1"
-  * task    : "time: 20; acquire: officer; release: officer; uses: officer"
-  * flow    : "prob: 0.3"   (branch probability, used by the simulation)
-"""
+"""BPMN 2.0 XML parser for process models and annotations."""
 from dataclasses import dataclass, field
 import xml.etree.ElementTree as ET
 
