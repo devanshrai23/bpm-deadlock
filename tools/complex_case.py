@@ -14,6 +14,7 @@ can hide another (a stuck branch stops the case before later errors are reached)
 
 Run:  python tools/complex_case.py      (writes results/complex_case.csv and figures)
 """
+import shutil
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
@@ -143,10 +144,13 @@ if __name__ == "__main__":
     used = {p for t in part.transitions for p in (*part.pre[t], *part.post[t])}
     for p in [p for p in part.places if p not in used]:
         del part.places[p]
-    for src, out in [(net_to_dot(n0, r0["dead_markings"][0]["marking"], c["highlight_places"],
-                                 c["highlight_transitions"]), "pn_C1_complex_dead"),
-                     (net_to_dot(part, r0["dead_markings"][0]["marking"], c["highlight_places"],
-                                 c["highlight_transitions"]), "pn_C1_complex_dead_part"),
-                     (net_to_dot(n3), "pn_C1_round3_monitored")]:
-        subprocess.run(["dot", "-Tpng", "-Gdpi=170", "-o", str(fig / f"{out}.png")], input=src.encode(), check=True)
-    print("figures written to", fig)
+    if shutil.which("dot"):
+        for src, out in [(net_to_dot(n0, r0["dead_markings"][0]["marking"], c["highlight_places"],
+                                     c["highlight_transitions"]), "pn_C1_complex_dead"),
+                         (net_to_dot(part, r0["dead_markings"][0]["marking"], c["highlight_places"],
+                                     c["highlight_transitions"]), "pn_C1_complex_dead_part"),
+                         (net_to_dot(n3), "pn_C1_round3_monitored")]:
+            subprocess.run(["dot", "-Tpng", "-Gdpi=170", "-o", str(fig / f"{out}.png")], input=src.encode(), check=True)
+        print("figures written to", fig)
+    else:
+        print("Graphviz 'dot' not installed; skipped figure generation.")
