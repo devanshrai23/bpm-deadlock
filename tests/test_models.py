@@ -1,4 +1,3 @@
-"""Tests for BPMN models and analysis pipeline."""
 from pathlib import Path
 import pytest
 from src.pipeline import run_pipeline
