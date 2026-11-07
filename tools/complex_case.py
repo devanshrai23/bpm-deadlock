@@ -1,19 +1,4 @@
-"""Complex case study C1: a loan process with five defects, repaired round by round.
-
-The framework is applied iteratively: detect -> find cause -> fix -> re-analyse.
-Each round fixes one class of cause and re-runs the analysis, because one defect
-can hide another (a stuck branch stops the case before later errors are reached).
-
-  Round 0  analyse the faulty model
-  Round 1  automatic quick fixes for the gateway errors (P1, P2, P3)
-  Round 2  manual redesign of the dead end (P4): the referred case gets a
-           "Manager decision" and joins the normal outcome
-  Round 3  siphon control place for the circular wait (P6)
-  Final    the hand-corrected BPMN model C1_fixed (resource order made
-           consistent instead of a control place)
-
-Run:  python tools/complex_case.py      (writes results/complex_case.csv and figures)
-"""
+"""Iterative round-by-round repair evaluation on complex model C1."""
 import shutil
 import subprocess
 import sys
