@@ -1,4 +1,3 @@
-"""Transforms BPMN models into Petri nets (workflow nets)."""
 from itertools import combinations
 from .petri_net import PetriNet
 
@@ -13,7 +12,6 @@ def _resources_of(node, key):
 
 
 def bpmn_to_petri(model):
-    """Return a PetriNet for the given BpmnModel."""
     net = PetriNet(model.name)
     net.add_place("i", "start (source)", "source")
     net.add_place("o", "end (sink)", "sink")
