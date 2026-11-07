@@ -1,4 +1,3 @@
-"""Reachability graph construction and soundness analysis."""
 from collections import deque
 from dataclasses import dataclass, field
 import time
