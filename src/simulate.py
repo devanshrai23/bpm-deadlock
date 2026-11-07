@@ -1,4 +1,3 @@
-"""Discrete-event timed simulation with branch probabilities."""
 import heapq
 import random
 import statistics
