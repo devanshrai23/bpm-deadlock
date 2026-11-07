@@ -1,4 +1,3 @@
-"""BPMN 2.0 XML parser for process models and annotations."""
 from dataclasses import dataclass, field
 import xml.etree.ElementTree as ET
 
