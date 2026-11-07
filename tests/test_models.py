@@ -1,4 +1,4 @@
-"""Expected result for every model.  Run:  python -m pytest -q"""
+"""Tests for BPMN models and analysis pipeline."""
 from pathlib import Path
 import pytest
 from src.pipeline import run_pipeline
