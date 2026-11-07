@@ -139,6 +139,7 @@ DEFAULT_TIME = {
     "Assign doctor": 10, "Admit to ward": 20, "Assign doctor (tests)": 10, "Reserve bed (tests)": 10,
     "Run bedside tests": 30, "Create care plan": 20, "Create purchase order": 15,
     "Review purchase order": 20, "Send PO to supplier": 5, "Revise purchase order": 15,
+    "Refer to manager": 5, "Manager decision": 30, "Send e-mail": 1, "Send SMS": 1, "Archive case": 3,
 }
 
 
@@ -337,6 +338,60 @@ SPECS.append(dict(key="D5_purchase_order_loop", title="D5 Purchase order revisio
     flows=[F("f1", "start", "create"), F("f2", "create", "merge"), F("f3", "merge", "review"),
            F("f4", "review", "ok"), F("f5", "ok", "send", "Yes"), F("f6", "send", "end"),
            F("f7", "ok", "revise", "No"), F("f8", "revise", "merge")]))
+
+# C1 / C1_fixed: complex end-to-end loan process with five independent defects ---------
+def c1(fixed):
+    """Faulty version: P1 (risk XOR-split, AND-join), P2 (AND-join at the document loop entry),
+    P6 (officer and credit system taken in opposite orders), P4 ("Refer to manager" dead end),
+    P3 (parallel notifications merged by an XOR-join).  The fixed version repairs all five."""
+    join = X if fixed else A
+    if fixed:   # both branches take the credit system first, then the officer
+        b = [T("b_credit", "Open credit system (fraud)", 3, 2, "acquire: credit_system"),
+             T("b_officer", "Assign officer (fraud)", 4, 2, "acquire: officer")]
+        bf = [F("f8", "and_split", "b_credit"), F("f9", "b_credit", "b_officer"), F("f10", "b_officer", "fraud")]
+    else:       # fraud branch takes the officer first: circular wait with the credit branch
+        b = [T("b_officer", "Assign officer (fraud)", 3, 2, "acquire: officer"),
+             T("b_credit", "Open credit system (fraud)", 4, 2, "acquire: credit_system")]
+        bf = [F("f8", "and_split", "b_officer"), F("f9", "b_officer", "b_credit"), F("f10", "b_credit", "fraud")]
+    nodes = [S("start", 0, 3, "Application received"), T("receive", "Receive application", 1, 3),
+             A("and_split", "", 2, 3),
+             T("a_credit", "Open credit system", 3, 0, "acquire: credit_system"),
+             T("a_officer", "Assign loan officer", 4, 0, "acquire: officer"),
+             T("assess", "Credit assessment", 5, 0, "release: officer, credit_system"),
+             X("risk", "Risk level?", 6, 0), T("senior", "Senior officer review", 7, 0),
+             T("auto", "Automatic scoring", 7, 1), join("risk_join", "", 8, 0),
+             *b, T("fraud", "Fraud check", 5, 2, "release: officer, credit_system"),
+             join("loop_join", "", 3, 4), T("docs", "Document check", 4, 4),
+             X("docs_ok", "Documents complete?", 5, 4), T("request", "Request missing documents", 6, 5),
+             A("and_join", "", 9, 3), T("decide", "Make decision", 10, 3), X("outcome", "Outcome?", 11, 3),
+             T("approve", "Approve loan", 12, 2), T("reject", "Reject loan", 12, 4),
+             T("refer", "Refer to manager", 12, 5), X("dec_join", "", 14, 3),
+             A("notify_split", "", 15, 3), T("email", "Send e-mail", 16, 2), T("sms", "Send SMS", 16, 4),
+             (A if fixed else X)("notify_join", "", 17, 3), T("archive", "Archive case", 18, 3),
+             E("end", 19, 3, "Done")]
+    flows = [F("f1", "start", "receive"), F("f2", "receive", "and_split"), F("f3", "and_split", "a_credit"),
+             F("f4", "a_credit", "a_officer"), F("f5", "a_officer", "assess"), F("f6", "assess", "risk"),
+             F("f7", "risk", "senior", "High", "prob: 0.3"), *bf,
+             F("f11", "risk", "auto", "Low", "prob: 0.7"), F("f12", "senior", "risk_join"),
+             F("f13", "auto", "risk_join"), F("f14", "and_split", "loop_join"), F("f15", "loop_join", "docs"),
+             F("f16", "docs", "docs_ok"), F("f17", "docs_ok", "and_join", "Yes", "prob: 0.75"),
+             F("f18", "docs_ok", "request", "No", "prob: 0.25"), F("f19", "request", "loop_join"),
+             F("f20", "risk_join", "and_join"), F("f21", "fraud", "and_join"), F("f22", "and_join", "decide"),
+             F("f23", "decide", "outcome"), F("f24", "outcome", "approve", "Approve", "prob: 0.6"),
+             F("f25", "outcome", "reject", "Reject", "prob: 0.3"), F("f26", "outcome", "refer", "Refer", "prob: 0.1"),
+             F("f27", "approve", "dec_join"), F("f28", "reject", "dec_join"), F("f29", "dec_join", "notify_split"),
+             F("f30", "notify_split", "email"), F("f31", "notify_split", "sms"), F("f32", "email", "notify_join"),
+             F("f33", "sms", "notify_join"), F("f34", "notify_join", "archive"), F("f35", "archive", "end")]
+    if fixed:   # the referred case gets a manager decision and joins the normal outcome
+        nodes.append(T("manager", "Manager decision", 13, 5))
+        flows += [F("f36", "refer", "manager"), F("f37", "manager", "dec_join")]
+    return dict(key="C1_fixed" if fixed else "C1_complex",
+                title="C1 Loan approval - end-to-end" + (" (all defects fixed)" if fixed else " (five defects)"),
+                doc="resources: officer=1, credit_system=1", nodes=nodes, flows=flows)
+
+
+SPECS += [c1(False), c1(True)]
+
 
 if __name__ == "__main__":
     OUT.mkdir(exist_ok=True)

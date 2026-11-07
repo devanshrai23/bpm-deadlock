@@ -19,11 +19,11 @@ MODELS = Path(__file__).parent / "models"
 st.set_page_config(page_title="BPM Deadlock Analyzer", layout="wide")
 
 LOAN = ["M1_sequential", "M2_parallel", "M3_wrong_join", "M3_fixed", "M4_missing_recovery",
-        "M4_fixed", "M5_resource_deadlock", "M5_fixed", "M6_full_timed"]
+        "M4_fixed", "M5_resource_deadlock", "M5_fixed", "M6_full_timed", "C1_complex", "C1_fixed"]
 DEMO = ["D1_order_fulfilment", "D2_insurance_claim", "D3_leave_request",
         "D4_hospital_admission", "D5_purchase_order_loop"]
 FIXED_VERSION = {"M3_wrong_join": "M3_fixed", "M4_missing_recovery": "M4_fixed",
-                 "M5_resource_deadlock": "M5_fixed"}
+                 "M5_resource_deadlock": "M5_fixed", "C1_complex": "C1_fixed"}
 
 
 @st.cache_data(show_spinner=False)
@@ -237,7 +237,7 @@ elif step.startswith("4"):
                  "Improper ends": len(fr["improper"]), "Sound": yn(fr["sound"])}])
             st.dataframe(comp, hide_index=True)
             pm = fix.get("permissiveness")
-            if pm:
+            if pm and pm["good_states"]:
                 st.caption(f"Permissiveness (Wang et al.): the control places keep {pm['kept']} of "
                            f"{pm['good_states']} good states" +
                            (" - maximally permissive." if pm["maximally_permissive"] else "."))

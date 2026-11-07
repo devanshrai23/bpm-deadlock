@@ -39,6 +39,10 @@ All the models are BPMN 2.0 XML files in `models/`, with diagram layout included
 | D3_leave_request | Demo, AND-split with XOR-join | improper completion |
 | D4_hospital_admission | Demo, bed and doctor circular wait | 1 deadlock |
 | D5_purchase_order_loop | Demo, AND-join at a loop entry | 1 deadlock |
+| C1_complex | Complex end-to-end loan process with five defects (P1, P2, P3, P4, P6) | 3 deadlocks visible at first; the rest are hidden until earlier fixes are applied |
+| C1_fixed | C1 with all five defects repaired in BPMN | sound, 212 states |
+
+The complex case is repaired round by round (detect → fix → re-analyse) by `python tools/complex_case.py`, which writes `results/complex_case.csv`.
 
 Extra information goes in the standard BPMN **documentation** field (Camunda Modeler: select the element, then Properties panel, then General, then Documentation):
 

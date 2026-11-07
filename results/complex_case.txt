@@ -1,0 +1,41 @@
+Round  Places  Transitions  States  Deadlocks  Improper ends  Dead transitions Safe Sound  Structural issues Mapping errors
+    0      40           36      32          3              0                23  yes    no P1, P2, P3, P4, P6              0
+    1      40           37     217          2              0                 0  yes    no             P4, P6              0
+    2      41           39     218          1              0                 0  yes    no                 P6              0
+    3      42           39     212          0              0                 0  yes   yes                  -              -
+final      41           39     212          0              0                 0  yes   yes                                 0
+  round 0: Original model (five defects)
+  round 1: Quick fixes: risk join and loop entry AND -> XOR (P1, P2); notification merge XOR -> AND (P3)
+  round 2: Redesign P4: Refer to manager -> Manager decision -> outcome merge
+  round 3: Control place V1 for siphon {p_f10, p_f5, r_credit_system, r_officer}
+  round final: C1_fixed: all five repaired in BPMN (same resource order on both branches)
+
+Structural issues in the original model:
+  P1: 'Risk level?' starts only ONE of its branches, but 'AND-join' waits for ALL of them.
+  P2: 'AND-join' waits for the loop-back flow 'f19', which can only arrive after the join itself has fired.
+  P3: 'AND-split' starts ALL its branches, but 'XOR-merge' lets each one through on its own, so the rest of the process runs more than once.
+  P4: 'Refer to manager' has no outgoing flow, so its token never reaches the end. Any join waiting for this path waits for ever.
+  P6: One path holds 'officer' and then requests 'credit_system' (at 'Open credit system (fraud)'), another holds 'credit_system' and then requests 'officer' (at 'Assign loan officer'). If both run together each waits for the other (circular wait).
+
+Dead markings of the original model:
+  D1: AND-split → AND-join, Open credit system → Assign loan officer, Assign officer (fraud) → Open credit system (fraud)
+      trace: Application received -> Receive application -> AND-split -> Open credit system -> Assign officer (fraud)
+  D2: Senior officer review → AND-join, AND-split → AND-join, Fraud check → AND-join, credit_system (free), officer (free)
+      trace: Application received -> Receive application -> AND-split -> Open credit system -> Assign loan officer -> Credit assessment -> Risk level?: High -> Senior officer review -> Assign officer (fraud) -> Open credit system (fraud) -> Fraud check
+  D3: Automatic scoring → AND-join, AND-split → AND-join, Fraud check → AND-join, credit_system (free), officer (free)
+      trace: Application received -> Receive application -> AND-split -> Open credit system -> Assign loan officer -> Credit assessment -> Risk level?: Low -> Automatic scoring -> Assign officer (fraud) -> Open credit system (fraud) -> Fraud check
+
+Dead markings after round1:
+   Documents complete? → AND-join [Yes], Open credit system → Assign loan officer, Assign officer (fraud) → Open credit system (fraud)
+      trace: Application received -> Receive application -> AND-split -> Open credit system -> Assign officer (fraud) -> XOR-merge (merge) -> Document check -> Documents complete?: Yes
+   credit_system (free), officer (free), after 'Refer to manager' (no outgoing flow)
+      trace: Application received -> Receive application -> AND-split -> Open credit system -> Assign loan officer -> Credit assessment -> Risk level?: High -> Senior officer review -> XOR-merge (merge) -> Assign officer (fraud) -> Open credit system (fraud) -> Fraud check -> XOR-merge (merge) -> Document check -> Documents complete?: Yes -> AND-join -> Make decision -> Outcome?: Refer -> Refer to manager
+
+Dead markings after round2:
+   Documents complete? → AND-join [Yes], Open credit system → Assign loan officer, Assign officer (fraud) → Open credit system (fraud)
+      trace: Application received -> Receive application -> AND-split -> Open credit system -> Assign officer (fraud) -> XOR-merge (merge) -> Document check -> Documents complete?: Yes
+
+Monitor: [{'place': 'V1', 'siphon': ['p_f10', 'p_f5', 'r_credit_system', 'r_officer'], 'tokens': 1, 'takes_from': ['Open credit system', 'Assign officer (fraud)'], 'gives_back': ['Credit assessment', 'Fraud check']}]
+Permissiveness of V1: {'good_states': 212, 'kept': 212, 'ratio': 1.0, 'maximally_permissive': True, 'unit_weights': True}
+Change operations C1_complex -> C1_fixed: {'insert': 3, 'delete': 0, 'replace': 6}
+figures written to /home/user/bpm-deadlock/results/figures

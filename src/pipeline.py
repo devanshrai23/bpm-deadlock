@@ -78,7 +78,7 @@ def summary_row(name, out):
         row["Sound after fix"] = "yes" if fr["sound"] else "no"
         row["States after fix"] = fr["states"]
         pm = fx["permissiveness"]
-        row["Good states kept"] = f"{pm['kept']}/{pm['good_states']}" if pm else "-"
+        row["Good states kept"] = f"{pm['kept']}/{pm['good_states']}" if pm and pm["good_states"] else "-"
         row["Alt. fix (split)"] = "; ".join(f"{', '.join(a['changes'])} -> {'sound' if a['result']['sound'] else 'unsound'}"
                                             for a in fx["alternatives"]) or "-"
     else:
