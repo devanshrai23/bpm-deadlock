@@ -1,24 +1,4 @@
-"""Step 5 - prevention / correction rules.
-
-Control-flow errors are repaired with "quick fixes" in the sense of Kraeuter
-et al. (BPM 2024): the goal is matching gateways, and there are two candidate
-fixes for a split/join mismatch - change the join, or change the split.  Both
-candidates are re-verified, and the user chooses (the join fix is the default
-because it keeps the business decision encoded in the split).
-
-  Cause                                   Default fix (join)        Alternative (split)
-  --------------------------------------  ------------------------  -------------------
-  XOR-split closed by AND-join (P1)       join -> XOR-join          split -> AND-split
-  AND-join at a loop entry (P2)           join -> XOR-join          -
-  AND-split closed by XOR-join (P3)       join -> AND-join          split -> XOR-split
-  dead end / missing recovery (P4)        add a recovery path (model-level, by design)
-  circular wait on resources (P6)         one monitor (control place) per problem
-                                          siphon - Wang et al. (IEEE TSMC 2023)
-
-The gateway rules are applied directly to the BPMN XML, so the fixed model can
-be downloaded and opened in Camunda Modeler.  The siphon rule is applied to
-the Petri net.
-"""
+"""Deadlock prevention and correction rules for gateways and resources."""
 import xml.etree.ElementTree as ET
 from .bpmn_parser import NS
 from .siphons import tokens_in
